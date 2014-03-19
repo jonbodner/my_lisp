@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"errors"
+	"bufio"
+	"os"
 )
 
 //expressions
 type SExpr struct {
 	Left Expr
-	Right Expr
+	Right *SExpr
 }
 
 type Expr interface {
@@ -175,24 +177,27 @@ func Parse(tokens []Token) (Expr, int, error) {
 }
 
 
-func Scan(s string) []Token {
+func Scan(s string) ([]Token, int) {
 	out := make([]Token,0)
 	curTokenTxt := make([]rune,0)
+	depth := 0
 	for _,c := range s {
 		switch c {
 			case '(': {
-			}
 				if len(curTokenTxt) > 0 {
 					out = append(out, NAME(string(curTokenTxt)))
 					curTokenTxt = make([]rune,0)
 				}
 				out = append(out,LPAREN{})
+				depth++
+			}
 			case ')': {
 				if len(curTokenTxt) > 0 {
 					out = append(out, NAME(string(curTokenTxt)))
 					curTokenTxt = make([]rune,0)
 				}
 				out = append(out,RPAREN{})
+				depth--
 			}
 			case '.': {
 				if len(curTokenTxt) > 0 {
@@ -201,7 +206,7 @@ func Scan(s string) []Token {
 				}
 				out = append(out,DOT{})
 			}
-			case ' ': {
+			case '\n', '\r', '\t', ' ': {
 				if len(curTokenTxt) > 0 {
 					out = append(out, NAME(string(curTokenTxt)))
 					curTokenTxt = make([]rune,0)
@@ -215,17 +220,46 @@ func Scan(s string) []Token {
 	if len(curTokenTxt) > 0 {
 		out = append(out, NAME(string(curTokenTxt)))
 	}
-	return out
+	return out, depth
 }
 
 func main() {
 	fmt.Println(Scan("a"))
 	fmt.Println(Scan("(a . b)"))
 	fmt.Println(Scan("(a (b c))"))
-	fmt.Println(Scan("(a b c)"))
-	expr, pos, err := Parse(Scan("(a b c d)"))
+	fmt.Println(Scan("(aa b c)"))
+	t, _ := Scan("(a b c d)")
+	expr, pos, err := Parse(t)
 	fmt.Println(expr)
 	fmt.Println(pos)
 	fmt.Println(err)
+	bio := bufio.NewReader(os.Stdin)
+	done := false
+	depth := 0
+	tokens := make([]Token,0)
+	for !done {
+		line, _ , err := bio.ReadLine()
+		if err != nil {
+			fmt.Errorf("Error: %v", err)
+			return
+		}
+		newTokens, newDepth := Scan(string(line))
+		depth = depth + newDepth
+		if depth < 0 {
+			fmt.Println("Invalid -- Too many closing parens")
+			depth = 0
+			tokens = make([]Token, 0)
+			continue
+		}
+		tokens = append(tokens, newTokens...)
+		if depth == 0 {
+			fmt.Println(tokens)
+			expr, pos, err := Parse(tokens)
+			fmt.Println(expr)
+			fmt.Println(pos)
+			fmt.Println(err)
+			tokens = make([]Token,0)
+		}
+	}
 }
 
