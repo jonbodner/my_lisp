@@ -72,7 +72,7 @@ func testingHelper(t *testing.T, expectedTokens []reflect.Type, expectedDepth in
 
 	for pos, tokenType := range expectedTokens {
 		if reflect.TypeOf(tokens[pos]) != tokenType {
-			t.Errorf("Should be a %s, was a %s", tokenType.Name() , reflect.TypeOf(tokens[pos]).Name())
+			t.Errorf("Should be a %s, was a %s", tokenType.Name(), reflect.TypeOf(tokens[pos]).Name())
 		}
 	}
 }

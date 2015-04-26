@@ -14,10 +14,33 @@ type SExpr struct {
 }
 
 type Expr interface {
+	fmt.Stringer
 	isExpr()
 }
 
 func (s SExpr) isExpr() {}
+
+func (s SExpr) String() string {
+	out := "("
+	if s.Left != NIL {
+		out += s.Left.String()
+	}
+	outer: for cur := s.Right; cur != NIL; {
+		out += " "
+		switch c := cur.(type) {
+			case Atom:
+				out +=". " + c.String()
+				break outer
+			case SExpr:
+				out += c.Left.String()
+				cur = c.Right
+		}
+	}
+	out += ")"
+	return out
+}
+
+/*
 func (s SExpr) String() string {
 	return s.stringInner(true)
 }
@@ -44,6 +67,7 @@ func (s SExpr) stringInner(top bool) string {
 	}
 	return out
 }
+*/
 
 type Atom string
 

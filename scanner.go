@@ -1,8 +1,8 @@
 package main
 
 func Scan(s string) ([]Token, int) {
-	out := make([]Token, 0)
-	curTokenTxt := make([]rune, 0)
+	out := []Token{}
+	curTokenTxt := []rune{}
 	buildCurToken := func() {
 		if len(curTokenTxt) > 0 {
 			out = append(out, NAME(string(curTokenTxt)))

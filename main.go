@@ -10,7 +10,7 @@ func main() {
 	bio := bufio.NewReader(os.Stdin)
 	done := false
 	depth := 0
-	tokens := make([]Token, 0)
+	tokens := []Token{}
 	for !done {
 		line, _, err := bio.ReadLine()
 		if err != nil {
