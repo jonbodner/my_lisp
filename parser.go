@@ -17,7 +17,7 @@ func parseInner(tokens []Token) (Expr, int, error) {
 		return out, 1, nil
 	case RParen:
 		//this is an error
-		return nil, 0, ParseError{"Right paren in unexpected location",tokens, 0}
+		return nil, 0, ParseError{"Right paren in unexpected location", tokens, 0}
 	case Dot:
 		//this is an error
 		return nil, 0, ParseError{"Dot in unexpected location", tokens, 0}
@@ -27,7 +27,7 @@ func parseInner(tokens []Token) (Expr, int, error) {
 		out := &SExpr{Atom("QUOTE"), quoted}
 		nested, remaining, err := parseInner(tokens[1:])
 		if err != nil {
-			if pe, ok := err.(ParseError);ok {
+			if pe, ok := err.(ParseError); ok {
 				pe.pos += 1
 				pe.tokens = tokens
 				err = pe
@@ -49,13 +49,13 @@ func parseInner(tokens []Token) (Expr, int, error) {
 			}
 			// if the next token is RPAREN, we're done
 			if tokens[pos] == RPAREN {
-				return out, pos+1, nil
+				return out, pos + 1, nil
 			}
 			//otherwise, recurse for the left value of the SExpr
 			left, nextToken, err := parseInner(tokens[pos:])
 			pos += nextToken
 			if err != nil {
-				if pe, ok := err.(ParseError);ok {
+				if pe, ok := err.(ParseError); ok {
 					pe.pos = pos
 					pe.tokens = tokens
 					err = pe
@@ -67,19 +67,19 @@ func parseInner(tokens []Token) (Expr, int, error) {
 			//if the next token is RPAREN, we're done
 			if tokens[pos] == RPAREN {
 				//fmt.Println("No right value -- done", out)
-				return out, pos+1, nil
+				return out, pos + 1, nil
 			}
 			//if the next token is a dot
 			if tokens[pos] == DOT {
 				if dotted {
-					return nil, pos, ParseError{"More than one dot in a dotted pair",tokens,pos}
+					return nil, pos, ParseError{"More than one dot in a dotted pair", tokens, pos}
 				}
 				dotted = true
-				pos ++
+				pos++
 				right, nextToken, err := parseInner(tokens[pos:])
-				pos +=nextToken
+				pos += nextToken
 				if err != nil {
-					if pe, ok := err.(ParseError);ok {
+					if pe, ok := err.(ParseError); ok {
 						pe.pos = pos
 						pe.tokens = tokens
 						err = pe
@@ -89,7 +89,7 @@ func parseInner(tokens []Token) (Expr, int, error) {
 				cur.Right = right
 			} else {
 				if dotted {
-					return nil, pos, ParseError{"More than one value to the right of the dot in a dotted pair",tokens,pos}
+					return nil, pos, ParseError{"More than one value to the right of the dot in a dotted pair", tokens, pos}
 				}
 				//otherwise, keep going
 				right := &SExpr{NIL, NIL}
@@ -99,5 +99,5 @@ func parseInner(tokens []Token) (Expr, int, error) {
 		}
 
 	}
-	return nil, 0, ParseError{"Unexpected Token found -- not processed!",tokens,0}
+	return nil, 0, ParseError{"Unexpected Token found -- not processed!", tokens, 0}
 }

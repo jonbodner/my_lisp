@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"testing"
 	"host.bodnerfamily.com/my_lisp/assert"
+	"testing"
 )
 
 func TestParserEmpty(t *testing.T) {
@@ -27,9 +27,9 @@ func TestParserEmptyList(t *testing.T) {
 	s, ok := expr.(*SExpr)
 	a.True("should be an SExpr", ok)
 	l, ok := s.Left.(Nil)
-	a.Equals("should be Nil",NIL, l)
+	a.Equals("should be Nil", NIL, l)
 	r, ok := s.Right.(Nil)
-	a.Equals("should be Nil", NIL,r)
+	a.Equals("should be Nil", NIL, r)
 }
 
 func TestBadLeftDottedPair(t *testing.T) {
@@ -56,13 +56,13 @@ func TestBadEmptyDottedPair(t *testing.T) {
 func TestGoodSimpleDottedPair(t *testing.T) {
 	a := assert.Assert{t}
 	expr, _, err := getExpression("( a . b)")
-	a.Nil("err should not have a value",err)
+	a.Nil("err should not have a value", err)
 	s, ok := expr.(*SExpr)
 	a.True("should be an SExpr", ok)
 	l, ok := s.Left.(Atom)
-	a.Equals("should be an atom == a",Atom("a"), l)
+	a.Equals("should be an atom == a", Atom("a"), l)
 	r, ok := s.Right.(Atom)
-	a.Equals("should be an atom == b", Atom("b"),r)
+	a.Equals("should be an atom == b", Atom("b"), r)
 }
 
 func TestParserSimpleList(t *testing.T) {
@@ -75,25 +75,25 @@ func TestNestedList(t *testing.T) {
 	a := assert.Assert{t}
 	expr, pos, err := getExpression("((a b (c) d) (e f) g)")
 	fmt.Println(expr, pos, err)
-	a.Nil("err should not have a value",err)
+	a.Nil("err should not have a value", err)
 }
 
-func TestQuote( t *testing.T) {
+func TestQuote(t *testing.T) {
 	a := assert.Assert{t}
 	expr, pos, err := getExpression("'a")
 	fmt.Println(expr, pos, err)
-	a.Nil("err should not have a value",err)
+	a.Nil("err should not have a value", err)
 
 	expr, pos, err = getExpression("'(a b c)")
 	fmt.Println(expr, pos, err)
-	a.Nil("err should not have a value",err)
+	a.Nil("err should not have a value", err)
 }
 
 func TestQuoteNested(t *testing.T) {
 	a := assert.Assert{t}
 	expr, pos, err := getExpression("('(a b '(c) d) (e 'f) g)")
 	fmt.Println(expr, pos, err)
-	a.Nil("err should not have a value",err)
+	a.Nil("err should not have a value", err)
 }
 
 func getExpression(in string) (Expr, int, error) {
@@ -101,4 +101,3 @@ func getExpression(in string) (Expr, int, error) {
 	expression, pos, err := Parse(tokens)
 	return expression, pos, err
 }
-

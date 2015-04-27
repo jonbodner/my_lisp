@@ -52,46 +52,46 @@ func Eval(e Expr) (Expr, error) {
 					return nil, errors.New("missing parameter for QUOTE")
 				}
 				switch a2 := t.Right.(type) {
-					case Atom:
-						return nil, errors.New("shouldn't have an Atom after a QUOTE")
-					case *SExpr:
-						//should only have a single parameter for QUOTE
-						if a2.Right != NIL {
-							return nil, errors.New("shouldn't have more than one parameter for QUOTE")
-						}
-						return a2.Left, nil
+				case Atom:
+					return nil, errors.New("shouldn't have an Atom after a QUOTE")
+				case *SExpr:
+					//should only have a single parameter for QUOTE
+					if a2.Right != NIL {
+						return nil, errors.New("shouldn't have more than one parameter for QUOTE")
+					}
+					return a2.Left, nil
 				}
 			case "CAR":
 				if t.Right == NIL {
 					return nil, errors.New("missing parameter for CAR")
 				}
 				switch a2 := t.Right.(type) {
+				case Atom:
+					return nil, errors.New("CAR parameter must be a list")
+				case *SExpr:
+					//should only have a single parameter for CAR
+					if a2.Right != NIL {
+						return nil, errors.New("shouldn't have more than one parameter for CAR")
+					}
+					e2, error := Eval(a2.Left)
+					if error != nil {
+						return nil, error
+					}
+					switch a3 := e2.(type) {
 					case Atom:
 						return nil, errors.New("CAR parameter must be a list")
 					case *SExpr:
-						//should only have a single parameter for CAR
-						if a2.Right != NIL {
-							return nil, errors.New("shouldn't have more than one parameter for CAR")
-						}
-						e2, error := Eval(a2.Left)
-						if error != nil {
-							return nil, error
-						}
-						switch a3 := e2.(type) {
-							case Atom:
-								return nil, errors.New("CAR parameter must be a list")
-							case *SExpr:
-								return a3.Left, nil
-						}
+						return a3.Left, nil
+					}
 				}
 			case "CDR":
 				if t.Right == NIL {
 					return nil, errors.New("missing parameter for CDR")
 				}
 				switch a2 := t.Right.(type) {
-					case Atom:
+				case Atom:
 					return nil, errors.New("CDR parameter must be a list")
-					case *SExpr:
+				case *SExpr:
 					//should only have a single parameter for CDR
 					if a2.Right != NIL {
 						return nil, errors.New("shouldn't have more than one parameter for CDR")
@@ -101,9 +101,9 @@ func Eval(e Expr) (Expr, error) {
 						return nil, error
 					}
 					switch a3 := e2.(type) {
-						case Atom:
+					case Atom:
 						return nil, errors.New("CDR parameter must be a list")
-						case *SExpr:
+					case *SExpr:
 						return a3.Right, nil
 					}
 				}
@@ -115,9 +115,9 @@ func Eval(e Expr) (Expr, error) {
 					return nil, errors.New("missing parameters for CONS")
 				}
 				switch a2 := t.Right.(type) {
-					case Atom:
+				case Atom:
 					return nil, errors.New("CONS parameter must be a list")
-					case *SExpr:
+				case *SExpr:
 					e2, error := Eval(a2.Left)
 					if error != nil {
 						return nil, error
@@ -127,9 +127,9 @@ func Eval(e Expr) (Expr, error) {
 						return nil, errors.New("must have two parameters for CONS")
 					}
 					switch a3 := a2.Right.(type) {
-						case Atom:
+					case Atom:
 						return nil, errors.New("CONS parameter must be a list")
-						case *SExpr:
+					case *SExpr:
 						if a3.Right != NIL {
 							return nil, errors.New("must have two parameters for CONS")
 						}
@@ -145,9 +145,9 @@ func Eval(e Expr) (Expr, error) {
 					return nil, errors.New("missing parameter for ATOM")
 				}
 				switch a2 := t.Right.(type) {
-					case Atom:
+				case Atom:
 					return Atom("T"), nil
-					case *SExpr:
+				case *SExpr:
 					//should only have a single parameter for ATOM
 					if a2.Right != NIL {
 						return nil, errors.New("shouldn't have more than one parameter for ATOM")
@@ -157,9 +157,9 @@ func Eval(e Expr) (Expr, error) {
 						return nil, error
 					}
 					switch a3 := e2.(type) {
-						case Atom:
+					case Atom:
 						return Atom("T"), nil
-						case *SExpr:
+					case *SExpr:
 						if a3.Left == NIL && a3.Right == NIL {
 							return Atom("T"), nil
 						}
@@ -167,39 +167,39 @@ func Eval(e Expr) (Expr, error) {
 					}
 				}
 			case "EQUAL":
-			//must have two params
-			if t.Right == NIL {
-				return nil, errors.New("missing parameters for EQUAL")
-			}
-			switch a2 := t.Right.(type) {
+				//must have two params
+				if t.Right == NIL {
+					return nil, errors.New("missing parameters for EQUAL")
+				}
+				switch a2 := t.Right.(type) {
 				case Atom:
-				return nil, errors.New("EQUAL parameter must be a list")
-				case *SExpr:
-				e2, error := Eval(a2.Left)
-				if error != nil {
-					return nil, error
-				}
-				//should have two parameters for EQUAL
-				if a2.Right == NIL {
-					return nil, errors.New("must have two parameters for EQUAL")
-				}
-				switch a3 := a2.Right.(type) {
-					case Atom:
 					return nil, errors.New("EQUAL parameter must be a list")
-					case *SExpr:
-					if a3.Right != NIL {
-						return nil, errors.New("must have two parameters for EQUAL")
-					}
-					e3, error := Eval(a3.Left)
+				case *SExpr:
+					e2, error := Eval(a2.Left)
 					if error != nil {
 						return nil, error
 					}
-					if isEqual(e2, e3) {
-						return Atom("T"), nil
+					//should have two parameters for EQUAL
+					if a2.Right == NIL {
+						return nil, errors.New("must have two parameters for EQUAL")
 					}
-					return &SExpr{NIL, NIL}, nil
+					switch a3 := a2.Right.(type) {
+					case Atom:
+						return nil, errors.New("EQUAL parameter must be a list")
+					case *SExpr:
+						if a3.Right != NIL {
+							return nil, errors.New("must have two parameters for EQUAL")
+						}
+						e3, error := Eval(a3.Left)
+						if error != nil {
+							return nil, error
+						}
+						if isEqual(e2, e3) {
+							return Atom("T"), nil
+						}
+						return &SExpr{NIL, NIL}, nil
+					}
 				}
-			}
 			case "cond":
 				return nil, errors.New("not implemented yet")
 			case "lambda":
@@ -220,15 +220,15 @@ func Eval(e Expr) (Expr, error) {
 
 func isEqual(e, e2 Expr) bool {
 	switch e := e.(type) {
-		case Atom:
+	case Atom:
 		if e2, ok := e2.(Atom); ok {
 			return e == e2
 		}
 		return false
-		case Nil:
+	case Nil:
 		_, ok := e2.(Nil)
 		return ok
-		case *SExpr:
+	case *SExpr:
 		if e2, ok := e2.(*SExpr); ok {
 			return isEqual(e.Left, e2.Left) && isEqual(e.Right, e2.Right)
 		}
