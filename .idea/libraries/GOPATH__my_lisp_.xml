@@ -1,0 +1,40 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;my_lisp&gt;">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../hanoi" />
+      <root url="file://$PROJECT_DIR$/../../peano" />
+      <root url="file://$PROJECT_DIR$/../../stack" />
+      <root url="file://$PROJECT_DIR$/../../primes" />
+      <root url="file://$PROJECT_DIR$/../../myutils" />
+      <root url="file://$PROJECT_DIR$/../../pointer" />
+      <root url="file://$PROJECT_DIR$/../../scratch" />
+      <root url="file://$PROJECT_DIR$/../../.DS_Store" />
+      <root url="file://$PROJECT_DIR$/../../checksites" />
+      <root url="file://$PROJECT_DIR$/../../github.com" />
+      <root url="file://$PROJECT_DIR$/../../fact_primes" />
+      <root url="file://$PROJECT_DIR$/../../trello_test" />
+      <root url="file://$PROJECT_DIR$/../../bitbucket.org" />
+      <root url="file://$PROJECT_DIR$/../../launchpad.net" />
+      <root url="file://$PROJECT_DIR$/../../schema_parser" />
+      <root url="file://$PROJECT_DIR$/../../defacing_score" />
+      <root url="file://$PROJECT_DIR$/../../code.google.com" />
+      <root url="file://$PROJECT_DIR$/../../rest_api_client" />
+      <root url="file://$PROJECT_DIR$/../../crypto_challenge" />
+      <root url="file://$PROJECT_DIR$/../../crypto_challenge_2" />
+      <root url="file://$PROJECT_DIR$/../git" />
+      <root url="file://$PROJECT_DIR$/../home" />
+      <root url="file://$PROJECT_DIR$/../queue" />
+      <root url="file://$PROJECT_DIR$/../rot13" />
+      <root url="file://$PROJECT_DIR$/../sample" />
+      <root url="file://$PROJECT_DIR$/../make_gif" />
+      <root url="file://$PROJECT_DIR$/../.DS_Store" />
+      <root url="file://$PROJECT_DIR$/../go-search" />
+      <root url="file://$PROJECT_DIR$/../readwrite" />
+      <root url="file://$PROJECT_DIR$/../star_solve" />
+      <root url="file://$PROJECT_DIR$/../go-file-share" />
+      <root url="file://$PROJECT_DIR$/../to reinstall under yosemite.txt" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

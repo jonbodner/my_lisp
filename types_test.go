@@ -24,19 +24,19 @@ func TestSExpr(t *testing.T) {
 		t.Fail()
 	}
 
-	twoItemList := SExpr{Left: Atom("WORD"), Right: SExpr{Left: Atom("WORD2"), Right: NIL}}
+	twoItemList := &SExpr{Left: Atom("WORD"), Right: &SExpr{Left: Atom("WORD2"), Right: NIL}}
 	fmt.Println(twoItemList)
 	if twoItemList.String() != "(WORD WORD2)" {
 		t.Fail()
 	}
 
-	nestedListStart := SExpr{Left: SExpr{Left: Atom("WORD"), Right: NIL}, Right: NIL}
+	nestedListStart := &SExpr{Left: &SExpr{Left: Atom("WORD"), Right: NIL}, Right: NIL}
 	fmt.Println(nestedListStart)
 	if nestedListStart.String() != "((WORD))" {
 		t.Fail()
 	}
 
-	nestedListStartEnd := SExpr{Left: SExpr{Left: Atom("WORD"), Right: SExpr{Left: Atom("WORD2"), Right: NIL}}, Right: SExpr{Left: Atom("WORD3"), Right: SExpr{Left: Atom("WORD4"), Right: NIL}}}
+	nestedListStartEnd := &SExpr{Left: &SExpr{Left: Atom("WORD"), Right: &SExpr{Left: Atom("WORD2"), Right: NIL}}, Right: &SExpr{Left: Atom("WORD3"), Right: &SExpr{Left: Atom("WORD4"), Right: NIL}}}
 	fmt.Println(nestedListStartEnd)
 	if nestedListStartEnd.String() != "((WORD WORD2) WORD3 WORD4)" {
 		t.Fail()

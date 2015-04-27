@@ -18,9 +18,9 @@ type Expr interface {
 	isExpr()
 }
 
-func (s SExpr) isExpr() {}
+func (s *SExpr) isExpr() {}
 
-func (s SExpr) String() string {
+func (s *SExpr) String() string {
 	out := "("
 	if s.Left != NIL {
 		out += s.Left.String()
@@ -31,7 +31,7 @@ func (s SExpr) String() string {
 			case Atom:
 				out +=". " + c.String()
 				break outer
-			case SExpr:
+			case *SExpr:
 				out += c.Left.String()
 				cur = c.Right
 		}
@@ -88,14 +88,15 @@ func (n Nil) String() string {
 //tokens
 
 type Token interface {
-	isTok()
+	fmt.Stringer
+	tokenForm() string
 }
 
 type LParen struct{}
 
 var LPAREN LParen
 
-func (l LParen) isTok() {}
+func (l LParen) tokenForm() string {return "("}
 func (l LParen) String() string {
 	return "LPAREN"
 }
@@ -104,7 +105,7 @@ type RParen struct{}
 
 var RPAREN RParen
 
-func (r RParen) isTok() {}
+func (r RParen) tokenForm() string {return ")"}
 func (r RParen) String() string {
 	return "RPAREN"
 }
@@ -113,7 +114,7 @@ type Dot struct{}
 
 var DOT Dot
 
-func (d Dot) isTok() {}
+func (d Dot) tokenForm() string {return "."}
 func (d Dot) String() string {
 	return "DOT"
 }
@@ -122,11 +123,12 @@ type Quote struct{}
 
 var QUOTE Quote
 
-func (q Quote) isTok() {}
+func (q Quote) tokenForm() string {return "'"}
 func (q Quote) String() string {
 	return "QUOTE"
 }
 
 type NAME string
 
-func (n NAME) isTok() {}
+func (n NAME) String() string { return string(n)}
+func (n NAME) tokenForm() string {return string(n)}
