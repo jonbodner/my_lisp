@@ -41,6 +41,8 @@ outer:
 	return out
 }
 
+var EMPTY *SExpr = &SExpr{NIL, NIL}
+
 /*
 func (s SExpr) String() string {
 	return s.stringInner(true)
@@ -76,6 +78,8 @@ func (a Atom) isExpr() {}
 func (a Atom) String() string {
 	return string(a)
 }
+
+var T Atom = "T"
 
 type Nil struct{}
 
