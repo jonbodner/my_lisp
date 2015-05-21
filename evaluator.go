@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/big"
 )
 
 /*
@@ -31,7 +32,7 @@ values of the expressions e I ... e n in the original environment.
 Thus
 value ((LAMBDA (X Y) (CONS (CAR X) Y)) (QUOTE (A B))
 (CDR (QUOTE (C D)))) = (A D).
-10. Here's the hard one. value ((LABEL f (LAMBDA (o I ... v,)
+DONE 10. Here's the hard one. value ((LABEL f (LAMBDA (o I ... v,)
 e)) e I ... en) is the same as value ((LAMBDA (v I ... vn) e) e I ...
 e n) with the additional rule that whenever ~¢al an) must be
 evaluated, f is replaced by (LABEL/" (LAMBDA (v I ... vn) e)).
@@ -40,11 +41,26 @@ Lists beginning with LABEL define functions recursively.
 
 type Env map[Atom]Expr
 
+type Evaluator func(*SExpr, Env) (Expr, error)
+
 var GlobalEnv = make(Env)
 
+var BuiltIn map[Atom]Evaluator
+
 func init() {
-	GlobalEnv[T] = &SExpr{Atom("QUOTE"), &SExpr{T, NIL}}
+	GlobalEnv[T] = T
 	GlobalEnv[Atom("NIL")] = EMPTY
+
+	BuiltIn = map[Atom]Evaluator {
+		Atom("QUOTE"): quote,
+		Atom("CAR"): car,
+		Atom("CDR"): cdr,
+		Atom("CONS"): cons,
+		Atom("ATOM"): atom,
+		Atom("EQ"): equal,
+		Atom("COND"): cond,
+		Atom("LABEL"): label,
+	}
 }
 
 func Eval(e Expr) (Expr, error) {
@@ -57,47 +73,39 @@ func evalInner(e Expr, env Env) (Expr, error) {
 	case Atom:
 		//look up variable value in context and return that
 		expr, ok := env[t]
-		if !ok {
-			return nil, fmt.Errorf("Unknown symbol %s ", t)
+		if ok {
+			if _, ok = expr.(Atom); ok {
+				return expr, nil
+			}
+			return evalInner(expr, env)
 		}
-		return evalInner(expr, env)
+		//check if number, and if so return self
+		r := &big.Rat{}
+		_, ok = r.SetString(string(t))
+		if ok {
+			return t, nil
+		}
+		return nil, fmt.Errorf("Unknown symbol %s ", t)
 	case *SExpr:
 		switch a := t.Left.(type) {
 		case Atom:
-			switch a {
-			case "QUOTE":
-				return quote(t, env)
-			case "CAR":
-				return car(t, env)
-			case "CDR":
-				return cdr(t, env)
-			case "CONS":
-				return cons(t, env)
-			case "ATOM":
-				return atom(t, env)
-			case "EQ":
-				return equal(t, env)
-			case "COND":
-				return cond(t, env)
-			case "lambda":
-				return nil, errors.New("not implemented yet")
-			case "label":
-				return nil, errors.New("not implemented yet")
-			default:
-				//look up variable value in context and process that
-				fmt.Println("looking up ", a)
-				expr, ok := env[a]
-				if !ok {
-					return nil, fmt.Errorf("Unknown symbol %s ", a)
-				}
-				//replace the atom with the value of the expression
-				result, err := evalInner(expr, env)
-				if err != nil {
-					return nil, err
-				}
-				t.Left = result
-				return evalInner(t, env)
+			evaluator, ok := BuiltIn[a]
+			if ok {
+				return evaluator(t, env)
 			}
+			//look up variable value in context and process that
+			fmt.Println("looking up ", a)
+			expr, ok := env[a]
+			if !ok {
+				return nil, fmt.Errorf("Unknown symbol %s ", a)
+			}
+			//replace the atom with the value of the expression
+			result, err := evalInner(expr, env)
+			if err != nil {
+				return nil, err
+			}
+			t.Left = result
+			return evalInner(t, env)
 		case *SExpr:
 			return nil, errors.New("no function specified")
 		case Nil:
@@ -284,9 +292,9 @@ func equal(t *SExpr, env Env) (Expr, error) {
 				return nil, error
 			}
 			if isEqual(e2, e3) {
-				return Atom("T"), nil
+				return T, nil
 			}
-			return &SExpr{NIL, NIL}, nil
+			return EMPTY, nil
 		}
 	default:
 		return nil, errors.New("shouldn't get here")
@@ -330,6 +338,40 @@ func cond(t *SExpr, env Env) (Expr, error) {
 	}
 }
 
+func label(t *SExpr, env Env) (Expr, error) {
+	//must have two params
+	//first must be an atom
+	//second can be any expression
+	//going to assign expression to atom
+	if t.Right == NIL {
+		return nil, errors.New("missing parameters for LABEL")
+	}
+	switch a2 := t.Right.(type) {
+		case Atom:
+		return nil, errors.New("LABEL parameter must be a list")
+		case *SExpr:
+		//a2.Left must be an atom
+		l, ok := a2.Left.(Atom)
+		if !ok {
+			return nil, errors.New("LABEL can only be assigned to an Atom")
+		}
+		//a2.Right must be an *SExpr
+		a3, ok := a2.Right.(*SExpr)
+		if !ok {
+			return nil, errors.New("LABEL parameter must be a list")
+		}
+		//a2.Right.Right must be NIL
+		if a3.Right != NIL {
+			return nil, errors.New("must have two parameters for LABEL")
+		}
+		//a2.Right.Left can be anything
+		lval := a3.Left
+		env[l] = lval
+		return l, nil
+	}
+	return nil, errors.New("Shouldn't get here")
+}
+
 //get the nth parameter of the SExpr.
 //The function/macro/special form name is the CAR of the SExpr passed in
 //pos == 1 for the first parameter. This is the CAR of the CDR of the SExpr passed in
@@ -354,7 +396,18 @@ func isEqual(e, e2 Expr) bool {
 	switch e := e.(type) {
 	case Atom:
 		if e2, ok := e2.(Atom); ok {
-			return e == e2
+			if e == e2 {
+				return true
+			} else {
+				//might be numbers, have to do numeric comparison
+				r := &big.Rat{}
+				r, ok := r.SetString(string(e))
+				r2 := &big.Rat{}
+				r2, ok2 := r2.SetString(string(e2))
+				if ok && ok2 {
+					return r.Cmp(r2) == 0
+				}
+			}
 		}
 		return false
 	case Nil:

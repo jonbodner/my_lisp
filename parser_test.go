@@ -7,21 +7,21 @@ import (
 )
 
 func TestParserEmpty(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	_, _, err := getExpression("")
 	a.NotNil("err should have a value", err)
 	a.Equals("wrong error message", "No tokens supplied", err.Error())
 }
 
 func TestParserAtom(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, _, err := getExpression("hello")
 	a.Nil("err should not have a value", err)
 	a.Equals("expected an atom", Atom("hello"), expr)
 }
 
 func TestParserEmptyList(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, _, err := getExpression("()")
 	a.Nil("err should not have a value", err)
 	s, ok := expr.(*SExpr)
@@ -33,28 +33,28 @@ func TestParserEmptyList(t *testing.T) {
 }
 
 func TestBadLeftDottedPair(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	_, _, err := getExpression("( . b)")
 	a.NotNil("err should have a value", err)
 	a.Equals("wrong error message", "Dot in unexpected location: ( _._ b ) ", err.Error())
 }
 
 func TestBadRightDottedPair(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	_, _, err := getExpression("(a . )")
 	a.NotNil("err should have a value", err)
 	a.Equals("wrong error message", "Right paren in unexpected location: ( a . _)_ ", err.Error())
 }
 
 func TestBadEmptyDottedPair(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	_, _, err := getExpression("( . )")
 	a.NotNil("err should have a value", err)
 	a.Equals("wrong error message", "Dot in unexpected location: ( _._ ) ", err.Error())
 }
 
 func TestGoodSimpleDottedPair(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, _, err := getExpression("( a . b)")
 	a.Nil("err should not have a value", err)
 	s, ok := expr.(*SExpr)
@@ -72,14 +72,14 @@ func TestParserSimpleList(t *testing.T) {
 }
 
 func TestNestedList(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, pos, err := getExpression("((a b (c) d) (e f) g)")
 	fmt.Println(expr, pos, err)
 	a.Nil("err should not have a value", err)
 }
 
 func TestQuote(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, pos, err := getExpression("'a")
 	fmt.Println(expr, pos, err)
 	a.Nil("err should not have a value", err)
@@ -90,7 +90,7 @@ func TestQuote(t *testing.T) {
 }
 
 func TestQuoteNested(t *testing.T) {
-	a := assert.Assert{t}
+	a := assert.Assert(*t)
 	expr, pos, err := getExpression("('(a b '(c) d) (e 'f) g)")
 	fmt.Println(expr, pos, err)
 	a.Nil("err should not have a value", err)

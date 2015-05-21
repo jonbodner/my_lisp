@@ -6,9 +6,7 @@ import (
     "fmt"
 )
 
-type Assert struct {
-    *testing.T
-}
+type Assert testing.T
 
 func (a Assert) True(msg string, test bool) {
     if !test {

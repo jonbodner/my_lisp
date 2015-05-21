@@ -5,7 +5,11 @@ func Scan(s string) ([]Token, int) {
 	curTokenTxt := []rune{}
 	buildCurToken := func() {
 		if len(curTokenTxt) > 0 {
-			out = append(out, NAME(string(curTokenTxt)))
+			if len(curTokenTxt) == 1 && curTokenTxt[0] == '.' {
+				out = append(out, DOT)
+			} else {
+				out = append(out, NAME(string(curTokenTxt)))
+			}
 			curTokenTxt = make([]rune, 0)
 		}
 	}
@@ -24,7 +28,7 @@ func Scan(s string) ([]Token, int) {
 			update(RPAREN)
 			depth--
 		case '.':
-			update(DOT)
+			curTokenTxt = append(curTokenTxt, c)
 		case '\n', '\r', '\t', ' ':
 			buildCurToken()
 		case '\'':
