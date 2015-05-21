@@ -51,14 +51,14 @@ func init() {
 	GlobalEnv[T] = T
 	GlobalEnv[Atom("NIL")] = EMPTY
 
-	BuiltIn = map[Atom]Evaluator {
+	BuiltIn = map[Atom]Evaluator{
 		Atom("QUOTE"): quote,
-		Atom("CAR"): car,
-		Atom("CDR"): cdr,
-		Atom("CONS"): cons,
-		Atom("ATOM"): atom,
-		Atom("EQ"): equal,
-		Atom("COND"): cond,
+		Atom("CAR"):   car,
+		Atom("CDR"):   cdr,
+		Atom("CONS"):  cons,
+		Atom("ATOM"):  atom,
+		Atom("EQ"):    equal,
+		Atom("COND"):  cond,
 		Atom("LABEL"): label,
 	}
 }
@@ -347,9 +347,9 @@ func label(t *SExpr, env Env) (Expr, error) {
 		return nil, errors.New("missing parameters for LABEL")
 	}
 	switch a2 := t.Right.(type) {
-		case Atom:
+	case Atom:
 		return nil, errors.New("LABEL parameter must be a list")
-		case *SExpr:
+	case *SExpr:
 		//a2.Left must be an atom
 		l, ok := a2.Left.(Atom)
 		if !ok {
