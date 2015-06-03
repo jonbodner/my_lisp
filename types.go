@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 //expressions
@@ -89,6 +90,77 @@ func (n Nil) isExpr() {}
 func (n Nil) String() string {
 	return "NIL"
 }
+
+type Env interface {
+	Get(a Atom) (Expr, bool)
+	Put(a Atom, e Expr)
+}
+
+type GlobalEnv map[Atom]Expr
+
+func (ge GlobalEnv) Get(a Atom) (Expr, bool) {
+	fmt.Println("checking global env for ", a)
+	e, ok := ge[a]
+	fmt.Println(e, ok)
+	return e, ok
+}
+
+func (ge GlobalEnv) Put(a Atom, e Expr) {
+	ge[a] = e
+}
+
+type LocalEnv struct {
+	Vals map[Atom]Expr
+	Parent Env
+}
+
+func (le LocalEnv) Get(a Atom) (Expr, bool) {
+	fmt.Println("checking local env for ", a)
+	e, ok := le.Vals[a]
+	if ok {
+		fmt.Println("found ", e, "at my level")
+		return e, ok
+	}
+	fmt.Println("not in me, going to parent")
+	return le.Parent.Get(a)
+}
+
+//for now, no shadowing of declarations from outer scopes
+//since there's no way to modify the value of a value in an outer scope
+//(LABEL and SETQ are both create and assign)
+func (le LocalEnv) Put(a Atom, e Expr) {
+	//case 1: already defined locally
+	if _, ok := le.Vals[a]; ok {
+		le.Vals[a] = e
+		return
+	}
+	// case 2: defined somewhere in a parent scope
+	if _, ok := le.Parent.Get(a); ok {
+		le.Parent.Put(a,e)
+		return
+	}
+	// case 3: never defined
+	le.Vals[a] = e
+}
+
+
+type Lambda struct {
+	ParentEnv Env
+	Params []Atom
+	Body Expr
+}
+
+func (l Lambda) isExpr() {}
+func (l Lambda) String() string {
+	sparams := make([]string, len(l.Params))
+	for k, v := range l.Params {
+		sparams[k] = string(v)
+	}
+	pstr := strings.Join(sparams," ")
+
+	return "(LAMBDA (" + pstr +") "+l.Body.String()+" )"
+}
+
 
 //tokens
 

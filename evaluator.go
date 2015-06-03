@@ -26,7 +26,7 @@ first of the p's whose value is not NIL. Thus
 value (COND ((ATOM (QUOTE A)) (QUOTE B)) ((QUOTE T)
 (QUOTE C))) = B.
 DONE 8. An atom v, regarded as a variable, may have a value.
-9. value ((LAMBDA (v I ... v,) e) e I ... e a) is the same as value e
+DONE 9. value ((LAMBDA (v I ... v,) e) e I ... e a) is the same as value e
 but in an environment in which the variables v I ... v n take the
 values of the expressions e I ... e n in the original environment.
 Thus
@@ -39,17 +39,15 @@ evaluated, f is replaced by (LABEL/" (LAMBDA (v I ... vn) e)).
 Lists beginning with LABEL define functions recursively.
 */
 
-type Env map[Atom]Expr
-
 type Evaluator func(*SExpr, Env) (Expr, error)
 
-var GlobalEnv = make(Env)
+var TopLevel = make(GlobalEnv)
 
 var BuiltIn map[Atom]Evaluator
 
 func init() {
-	GlobalEnv[T] = T
-	GlobalEnv[Atom("NIL")] = EMPTY
+	TopLevel[T] = T
+	TopLevel[Atom("NIL")] = EMPTY
 
 	BuiltIn = map[Atom]Evaluator{
 		Atom("QUOTE"): quote,
@@ -60,60 +58,106 @@ func init() {
 		Atom("EQ"):    equal,
 		Atom("COND"):  cond,
 		Atom("LABEL"): label,
+		Atom("SETQ"):  setq,
+		Atom("LAMBDA"):  lambda,
+		Atom("+"): plus,
+		Atom("-"): minus,
+//		Atom("*"): times,
+//		Atom("/"): div,
 	}
 }
 
 func Eval(e Expr) (Expr, error) {
-	return evalInner(e, GlobalEnv)
+	return evalInner(e, TopLevel)
 }
 
+var depth = 0
+
 func evalInner(e Expr, env Env) (Expr, error) {
+	depth++
+	defer func () {
+		fmt.Println("done depth ", depth)
+		depth--
+	}()
+	fmt.Println("at depth ", depth)
 	fmt.Println("Evaluating ", e)
 	switch t := e.(type) {
 	case Atom:
-		//look up variable value in context and return that
-		expr, ok := env[t]
-		if ok {
-			if _, ok = expr.(Atom); ok {
-				return expr, nil
-			}
-			return evalInner(expr, env)
-		}
+		fmt.Println("\tGot an Atom")
 		//check if number, and if so return self
 		r := &big.Rat{}
-		_, ok = r.SetString(string(t))
+		_, ok := r.SetString(string(t))
 		if ok {
+			fmt.Println("\t\t\tand it's a number so we're done")
 			return t, nil
+		}
+		//look up variable value in context and return that
+		expr, ok := env.Get(t)
+		if ok {
+			fmt.Println("\t\tvalue found for atom")
+			if _, ok = expr.(Atom); ok {
+				fmt.Println("\t\t\tand it's an atom, so we're done")
+				return expr, nil
+			}
+			fmt.Println("\t\t\tevaluating value found for atom")
+			return evalInner(expr, env)
 		}
 		return nil, fmt.Errorf("Unknown symbol %s ", t)
 	case *SExpr:
+		fmt.Println("\tGot an SExpr")
 		switch a := t.Left.(type) {
 		case Atom:
+			fmt.Println("\t\tLeft is an Atom")
 			evaluator, ok := BuiltIn[a]
 			if ok {
+				fmt.Println("running ", a, evaluator)
 				return evaluator(t, env)
 			}
+			fmt.Println("not a builtin")
 			//look up variable value in context and process that
 			fmt.Println("looking up ", a)
-			expr, ok := env[a]
+			expr, ok := env.Get(a)
 			if !ok {
 				return nil, fmt.Errorf("Unknown symbol %s ", a)
 			}
 			//replace the atom with the value of the expression
 			result, err := evalInner(expr, env)
+			fmt.Println("done evaluating")
 			if err != nil {
 				return nil, err
 			}
-			t.Left = result
-			return evalInner(t, env)
+			newT := &SExpr{result, t.Right}
+			return evalInner(newT, env)
 		case *SExpr:
-			return nil, errors.New("no function specified")
+			fmt.Println("\t\tLeft is an SExpr")
+			//evaluate the left, then replace left with the evaluated value, and recurse
+			lResult, err := evalInner(t.Left, env)
+			if err != nil {
+				return nil, err
+			}
+			t.Left = lResult
+			return evalInner(t, env)
 		case Nil:
+			fmt.Println("Got a nil left")
 			return t, nil
+		case Lambda:
+			fmt.Println("\t\tLeft is a Lambda")
+			//make sure the right side is an *SExpr
+			if paramVals, ok := t.Right.(*SExpr); !ok {
+				return nil, errors.New("LAMBDA parameters must be a list")
+			} else {
+				return processLambda(a, paramVals, env)
+			}
 		default:
 			return nil, errors.New("shouldn't get here")
 		}
+	case Lambda:
+		fmt.Println("\tGot a lambda")
+		return t, nil
+	default:
+		fmt.Println("\t what happened?")
 	}
+
 	return nil, errors.New("don't know how I got here")
 }
 
@@ -223,6 +267,10 @@ func cons(t *SExpr, env Env) (Expr, error) {
 			e3, error := evalInner(a3.Left, env)
 			if error != nil {
 				return nil, error
+			}
+			fmt.Println("second cons param:", e3)
+			if e3 == EMPTY {
+				e3 = NIL
 			}
 			return &SExpr{e2, e3}, nil
 		default:
@@ -366,11 +414,216 @@ func label(t *SExpr, env Env) (Expr, error) {
 		}
 		//a2.Right.Left can be anything
 		lval := a3.Left
-		env[l] = lval
+		env.Put(l, lval)
 		return l, nil
 	}
 	return nil, errors.New("Shouldn't get here")
 }
+
+func setq(t *SExpr, env Env) (Expr, error) {
+	//must have two params
+	//first must be an atom
+	//second can be any expression
+	//going to evaluate expression and assign result to atom
+	if t.Right == NIL {
+		return nil, errors.New("missing parameters for SETQ")
+	}
+	switch a2 := t.Right.(type) {
+	case Atom:
+		return nil, errors.New("SETQ parameter must be a list")
+	case *SExpr:
+		//a2.Left must be an atom
+		l, ok := a2.Left.(Atom)
+		if !ok {
+			return nil, errors.New("SETQ can only be assigned to an Atom")
+		}
+		//a2.Right must be an *SExpr
+		a3, ok := a2.Right.(*SExpr)
+		if !ok {
+			return nil, errors.New("SETQ parameter must be a list")
+		}
+		//a2.Right.Right must be NIL
+		if a3.Right != NIL {
+			return nil, errors.New("must have two parameters for SETQ")
+		}
+		//a2.Right.Left can be anything
+		lval, err := evalInner(a3.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		env.Put(l, lval)
+		return l, nil
+	}
+	return nil, errors.New("Shouldn't get here")
+}
+
+func plus(t *SExpr, env Env) (Expr, error) {
+	fmt.Println("in +")
+	if t.Right == NIL {
+		return nil, errors.New("missing parameters for +")
+	}
+	params, ok := t.Right.(*SExpr)
+	if !ok {
+		return nil, errors.New("+ parameters must be a list")
+	}
+	r := &big.Rat{}
+	for {
+		ev, err := evalInner(params.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("\tfinished eval -- checking if it's a number")
+		r2 := &big.Rat{}
+		_, ok = r2.SetString(ev.String())
+		if !ok {
+			return nil, fmt.Errorf("%s is not a valid number", ev)
+		}
+		r.Add(r, r2)
+		next := params.Right
+		if next == NIL {
+			break
+		}
+		n, ok := next.(*SExpr)
+		if !ok {
+			return nil, errors.New("+ parameters must be a List")
+		}
+		params = n
+	}
+	return Atom(r.RatString()), nil
+}
+
+func minus(t *SExpr, env Env) (Expr, error) {
+	if t.Right == NIL {
+		return nil, errors.New("missing parameters for -")
+	}
+	params, ok := t.Right.(*SExpr)
+	if !ok {
+		return nil, errors.New("- parameters must be a list")
+	}
+	r := &big.Rat{}
+	first := true
+	for {
+		ev, err := evalInner(params.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		r2 := &big.Rat{}
+		_, ok = r2.SetString(ev.String())
+		if !ok {
+			return nil, fmt.Errorf("%s is not a valid number", ev)
+		}
+		if first {
+			r = r2
+		} else {
+			r.Sub(r, r2)
+		}
+		next := params.Right
+		if next == NIL {
+			//if there was only one value, just negate it
+			if first {
+				r.Neg(r)
+			}
+			break
+		}
+		first = false
+		n, ok := next.(*SExpr)
+		if !ok {
+			return nil, errors.New("- parameters must be a List")
+		}
+		params = n
+	}
+	return Atom(r.RatString()), nil
+}
+
+func lambda(t *SExpr, env Env) (Expr, error) {
+	fmt.Println("entering lambda")
+	//must have 2 params
+	//param 1 is a list of parameters
+	if t.Right == NIL {
+		return nil, errors.New("missing parameters for LAMBDA")
+	}
+	a2, ok := t.Right.(*SExpr)
+	if !ok {
+		return nil, errors.New("LAMBDA parameter must be a list")
+	}
+	l, ok := a2.Left.(*SExpr)
+	if !ok {
+		return nil, errors.New("LAMBDA parameter list must be a List")
+	}
+	//copy into slice of Atoms
+	aList, err := listToSlice(l)
+	if err != nil {
+		return nil, err
+	}
+	//a2.Right must be an *SExpr
+	a3, ok := a2.Right.(*SExpr)
+	if !ok {
+		return nil, errors.New("LAMBDA parameter must be a list")
+	}
+
+	//a2.Right.Right must be NIL
+	if a3.Right != NIL {
+		return nil, errors.New("must have two parameters for LAMBDA")
+	}
+
+	//param 2 is an Expr
+	//a2.Right.Left can be anything
+	//returns a new Expr type, a Lambda, which has its own env
+	lambda := Lambda{ParentEnv:env, Body: a3.Left, Params: aList}
+	fmt.Println("exiting lambda")
+	return lambda, nil
+}
+
+func listToSlice(l *SExpr) ([]Atom, error) {
+	out := []Atom{}
+	lPos := l
+	for {
+		cur := lPos.Left
+		c, ok := cur.(Atom)
+		if !ok {
+			return nil, errors.New("Only Atoms can be parameter names")
+		}
+		out = append(out, c)
+		next := lPos.Right
+		if next == NIL {
+			break
+		}
+		if ns, ok := next.(*SExpr); !ok {
+			return nil, errors.New("Parameters cannot be a dotted list")
+		} else {
+			lPos = ns
+		}
+
+	}
+	return out, nil
+}
+
+func processLambda(l Lambda, paramVals *SExpr, env Env) (Expr, error) {
+	fmt.Println("in processLambda")
+	le := LocalEnv{Vals:make(map[Atom]Expr), Parent: l.ParentEnv}
+	//assign parameter values to parameter names
+	curParam := paramVals
+	for _, v := range l.Params {
+		val, err := evalInner(curParam.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		le.Vals[v] = val
+		next := curParam.Right
+		if next == NIL {
+			break
+		}
+		if n, ok := next.(*SExpr); !ok {
+			return nil, errors.New("Can't have a dotted pair here")
+		} else {
+			curParam = n
+		}
+	}
+	fmt.Println("\tevaling body with envronment", le)
+	//call body with new environment
+	return evalInner(l.Body, le)
+}
+
 
 //get the nth parameter of the SExpr.
 //The function/macro/special form name is the CAR of the SExpr passed in
@@ -424,13 +677,18 @@ func isEqual(e, e2 Expr) bool {
 
 /*
 todo
-
+load/save environment
+numeric operations
+do
+code cleanup
 macros
+
+experiments:
 slices
 maps
 channels
 go routines
 select
-numeric operations
-load/save environment
+tail call optimization?
+compilation?
 */
