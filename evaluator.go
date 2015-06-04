@@ -95,12 +95,7 @@ func evalInner(e Expr, env Env) (Expr, error) {
 		expr, ok := env.Get(t)
 		if ok {
 			fmt.Println("\t\tvalue found for atom")
-			if _, ok = expr.(Atom); ok {
-				fmt.Println("\t\t\tand it's an atom, so we're done")
-				return expr, nil
-			}
-			fmt.Println("\t\t\tevaluating value found for atom")
-			return evalInner(expr, env)
+			return expr, nil
 		}
 		return nil, fmt.Errorf("Unknown symbol %s ", t)
 	case *SExpr:
@@ -142,12 +137,7 @@ func evalInner(e Expr, env Env) (Expr, error) {
 			return t, nil
 		case Lambda:
 			fmt.Println("\t\tLeft is a Lambda")
-			//make sure the right side is an *SExpr
-			if paramVals, ok := t.Right.(*SExpr); !ok {
-				return nil, errors.New("LAMBDA parameters must be a list")
-			} else {
-				return processLambda(a, paramVals, env)
-			}
+			return processLambda(a, t, env)
 		default:
 			return nil, errors.New("shouldn't get here")
 		}
@@ -536,88 +526,103 @@ func minus(t *SExpr, env Env) (Expr, error) {
 }
 
 func lambda(t *SExpr, env Env) (Expr, error) {
-	fmt.Println("entering lambda")
 	//must have 2 params
 	//param 1 is a list of parameters
-	if t.Right == NIL {
+	params, err := nth(1, t)
+	if err != nil {
+		return nil, err
+	}
+	if params == NIL {
 		return nil, errors.New("missing parameters for LAMBDA")
 	}
-	a2, ok := t.Right.(*SExpr)
-	if !ok {
-		return nil, errors.New("LAMBDA parameter must be a list")
-	}
-	l, ok := a2.Left.(*SExpr)
+	l, ok := params.(*SExpr)
 	if !ok {
 		return nil, errors.New("LAMBDA parameter list must be a List")
 	}
+
 	//copy into slice of Atoms
 	aList, err := listToSlice(l)
 	if err != nil {
 		return nil, err
 	}
-	//a2.Right must be an *SExpr
-	a3, ok := a2.Right.(*SExpr)
-	if !ok {
-		return nil, errors.New("LAMBDA parameter must be a list")
-	}
-
-	//a2.Right.Right must be NIL
-	if a3.Right != NIL {
-		return nil, errors.New("must have two parameters for LAMBDA")
-	}
 
 	//param 2 is an Expr
+	body, err := nth(2, t)
+	if err != nil {
+		return nil, err
+	}
+	if body == NIL {
+		return nil, errors.New("must have two parameters for LAMBDA")
+	}
 	//a2.Right.Left can be anything
 	//returns a new Expr type, a Lambda, which has its own env
-	lambda := Lambda{ParentEnv:env, Body: a3.Left, Params: aList}
-	fmt.Println("exiting lambda")
+	lambda := Lambda{ParentEnv:env, Body: body, Params: aList}
 	return lambda, nil
 }
 
 func listToSlice(l *SExpr) ([]Atom, error) {
 	out := []Atom{}
-	lPos := l
+
+	pos := 0
 	for {
-		cur := lPos.Left
+		cur, err := nth(pos, l)
+		if err != nil {
+			return nil, err
+		}
+
+		if cur == NIL {
+			break
+		}
+
 		c, ok := cur.(Atom)
 		if !ok {
 			return nil, errors.New("Only Atoms can be parameter names")
 		}
-		out = append(out, c)
-		next := lPos.Right
-		if next == NIL {
-			break
-		}
-		if ns, ok := next.(*SExpr); !ok {
-			return nil, errors.New("Parameters cannot be a dotted list")
-		} else {
-			lPos = ns
-		}
 
+		out = append(out, c)
+		pos++
 	}
 	return out, nil
 }
 
-func processLambda(l Lambda, paramVals *SExpr, env Env) (Expr, error) {
+func processLambda(l Lambda, t *SExpr, env Env) (Expr, error) {
 	fmt.Println("in processLambda")
 	le := LocalEnv{Vals:make(map[Atom]Expr), Parent: l.ParentEnv}
 	//assign parameter values to parameter names
-	curParam := paramVals
-	for _, v := range l.Params {
-		val, err := evalInner(curParam.Left, env)
-		if err != nil {
-			return nil, err
-		}
-		le.Vals[v] = val
-		next := curParam.Right
-		if next == NIL {
-			break
-		}
-		if n, ok := next.(*SExpr); !ok {
+	count :=0
+	switch paramVals := t.Right.(type) {
+		case Atom:
 			return nil, errors.New("Can't have a dotted pair here")
-		} else {
-			curParam = n
-		}
+		case Nil:
+			//do nothing
+		case *SExpr:
+			var param Expr = NIL
+			for count < len(l.Params) {
+				var err error
+				param, err = nth(count, paramVals)
+				if err != nil {
+					return nil, err
+				}
+				if param == NIL {
+					break
+				}
+				val, err := evalInner(param, env)
+				if err != nil {
+					return nil, err
+				}
+				le.Vals[l.Params[count]] = val
+				count++
+			}
+			leftOver, err := nth(len(l.Params), paramVals)
+			if err != nil {
+				return nil, err
+			}
+			if leftOver != NIL {
+				return nil, fmt.Errorf("Too many parameters for LAMBDA. Expected %d", len(l.Params))
+			}
+	}
+	if count != len(l.Params) {
+		return nil, fmt.Errorf("Too few parameters for LAMBDA. Expected %d, got %d", len(l.Params), count)
 	}
 	fmt.Println("\tevaling body with envronment", le)
 	//call body with new environment
