@@ -13,6 +13,7 @@ func TestMinus(t *testing.T) {
     internalEvaluator(t, "( - 1 5)", "-4")
     internalEvaluator(t, "( - 5 1)", "4")
     internalEvaluator(t, "( - 1 1 1 1 1 1)", "-4")
+    internalEvaluator(t, "(-)", "missing parameters for -")
 }
 
 func TestPlus(t *testing.T) {
@@ -24,19 +25,21 @@ func TestPlus(t *testing.T) {
 }
 
 func TestTimes(t *testing.T) {
-    internalEvaluator(t, "( + 1)", "1")
-    internalEvaluator(t, "( + 1 1)", "2")
-    internalEvaluator(t, "( + 1 5)", "6")
-    internalEvaluator(t, "( + 5 1)", "6")
-    internalEvaluator(t, "( + 1 1 1 1 1 1)", "6")
+    internalEvaluator(t, "( * 1)", "1")
+    internalEvaluator(t, "( * 1 1)", "1")
+    internalEvaluator(t, "( * 1 5)", "5")
+    internalEvaluator(t, "( * 5 1)", "5")
+    internalEvaluator(t, "( * 1 1 1 1 1 1)", "1")
+    internalEvaluator(t, "(*)", "missing parameters for *")
 }
 
 func TestDivide(t *testing.T) {
-    internalEvaluator(t, "( + 1)", "1")
-    internalEvaluator(t, "( + 1 1)", "2")
-    internalEvaluator(t, "( + 1 5)", "6")
-    internalEvaluator(t, "( + 5 1)", "6")
-    internalEvaluator(t, "( + 1 1 1 1 1 1)", "6")
+    internalEvaluator(t, "( / 1)", "1")
+    internalEvaluator(t, "( / 1 1)", "1")
+    internalEvaluator(t, "( / 1 5)", "1/5")
+    internalEvaluator(t, "( / 5 1)", "5")
+    internalEvaluator(t, "( / 1 1 1 1 1 1)", "1")
+    internalEvaluator(t, "(/)", "missing parameters for /")
 }
 
 //core
@@ -89,7 +92,9 @@ func internalEvaluator(t *testing.T, input string, expected string) {
     expr, _, _ := parser.Parse(tokens)
     out, err := Eval(expr)
     if err != nil {
-        t.Errorf("Unexpected error %v", err)
+        if err.Error() != expected {
+            t.Errorf("Unexpected error. Expected %s, got %v", expected, err.Error())
+        }
     } else {
         if out.String() != expected {
             t.Errorf("Expected %s, got %v ", expected, out)
