@@ -1,9 +1,10 @@
-package main
+package scanner
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
+	"host.bodnerfamily.com/my_lisp/types"
 )
 
 func TestScannerEmpty(t *testing.T) {
@@ -19,7 +20,7 @@ func TestScannerAtom(t *testing.T) {
 
 	tokens, depth := Scan(atom)
 
-	testingHelper(t, []reflect.Type{reflect.TypeOf(NAME(""))}, 0, tokens, depth)
+	testingHelper(t, []reflect.Type{reflect.TypeOf(types.NAME(""))}, 0, tokens, depth)
 }
 
 func TestScannerList(t *testing.T) {
@@ -29,11 +30,11 @@ func TestScannerList(t *testing.T) {
 
 	testingHelper(t,
 		[]reflect.Type{
-			reflect.TypeOf(LPAREN),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(RPAREN)},
+			reflect.TypeOf(types.LPAREN),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.RPAREN)},
 		0, tokens, depth)
 }
 
@@ -44,23 +45,23 @@ func TestScannerAllTokens(t *testing.T) {
 
 	testingHelper(t,
 		[]reflect.Type{
-			reflect.TypeOf(LPAREN),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(DOT),
-			reflect.TypeOf(QUOTE),
-			reflect.TypeOf(LPAREN),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(NAME("")),
-			reflect.TypeOf(RPAREN),
-			reflect.TypeOf(RPAREN),
-			reflect.TypeOf(LPAREN)},
+			reflect.TypeOf(types.LPAREN),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.DOT),
+			reflect.TypeOf(types.QUOTE),
+			reflect.TypeOf(types.LPAREN),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.NAME("")),
+			reflect.TypeOf(types.RPAREN),
+			reflect.TypeOf(types.RPAREN),
+			reflect.TypeOf(types.LPAREN)},
 		1, tokens, depth)
 }
 
-func testingHelper(t *testing.T, expectedTokens []reflect.Type, expectedDepth int, tokens []Token, depth int) {
+func testingHelper(t *testing.T, expectedTokens []reflect.Type, expectedDepth int, tokens []types.Token, depth int) {
 	fmt.Println(tokens, depth)
 
 	if len(tokens) != len(expectedTokens) {

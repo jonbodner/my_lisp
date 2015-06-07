@@ -1,9 +1,10 @@
-package main
+package evaluator
 
 import (
 	"errors"
 	"fmt"
 	"math/big"
+	. "host.bodnerfamily.com/my_lisp/types"
 )
 
 /*
@@ -682,10 +683,12 @@ func isEqual(e, e2 Expr) bool {
 
 /*
 todo
+let/scopes
+progn
 load/save environment
 numeric operations
-do
 code cleanup
+logging levels
 macros
 
 experiments:

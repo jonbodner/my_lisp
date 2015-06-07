@@ -1,9 +1,11 @@
-package main
+package parser
 
 import (
 	"fmt"
 	"host.bodnerfamily.com/my_lisp/assert"
 	"testing"
+	"host.bodnerfamily.com/my_lisp/types"
+	"host.bodnerfamily.com/my_lisp/scanner"
 )
 
 func TestParserEmpty(t *testing.T) {
@@ -17,19 +19,19 @@ func TestParserAtom(t *testing.T) {
 	a := assert.Assert(*t)
 	expr, _, err := getExpression("hello")
 	a.Nil("err should not have a value", err)
-	a.Equals("expected an atom", Atom("hello"), expr)
+	a.Equals("expected an atom", types.Atom("hello"), expr)
 }
 
 func TestParserEmptyList(t *testing.T) {
 	a := assert.Assert(*t)
 	expr, _, err := getExpression("()")
 	a.Nil("err should not have a value", err)
-	s, ok := expr.(*SExpr)
+	s, ok := expr.(*types.SExpr)
 	a.True("should be an SExpr", ok)
-	l, ok := s.Left.(Nil)
-	a.Equals("should be Nil", NIL, l)
-	r, ok := s.Right.(Nil)
-	a.Equals("should be Nil", NIL, r)
+	l, ok := s.Left.(types.Nil)
+	a.Equals("should be Nil", types.NIL, l)
+	r, ok := s.Right.(types.Nil)
+	a.Equals("should be Nil", types.NIL, r)
 }
 
 func TestBadLeftDottedPair(t *testing.T) {
@@ -57,12 +59,12 @@ func TestGoodSimpleDottedPair(t *testing.T) {
 	a := assert.Assert(*t)
 	expr, _, err := getExpression("( a . b)")
 	a.Nil("err should not have a value", err)
-	s, ok := expr.(*SExpr)
+	s, ok := expr.(*types.SExpr)
 	a.True("should be an SExpr", ok)
-	l, ok := s.Left.(Atom)
-	a.Equals("should be an atom == a", Atom("a"), l)
-	r, ok := s.Right.(Atom)
-	a.Equals("should be an atom == b", Atom("b"), r)
+	l, ok := s.Left.(types.Atom)
+	a.Equals("should be an atom == a", types.Atom("a"), l)
+	r, ok := s.Right.(types.Atom)
+	a.Equals("should be an atom == b", types.Atom("b"), r)
 }
 
 func TestParserSimpleList(t *testing.T) {
@@ -96,8 +98,8 @@ func TestQuoteNested(t *testing.T) {
 	a.Nil("err should not have a value", err)
 }
 
-func getExpression(in string) (Expr, int, error) {
-	tokens, _ := Scan(in)
+func getExpression(in string) (types.Expr, int, error) {
+	tokens, _ := scanner.Scan(in)
 	expression, pos, err := Parse(tokens)
 	return expression, pos, err
 }

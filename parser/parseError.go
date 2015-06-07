@@ -1,8 +1,10 @@
-package main
+package parser
+
+import "host.bodnerfamily.com/my_lisp/types"
 
 type ParseError struct {
 	msg    string
-	tokens []Token
+	tokens []types.Token
 	pos    int
 }
 
@@ -22,7 +24,7 @@ func (te ParseError) buildTokenForm() string {
 		if i == te.pos {
 			out += "_"
 		}
-		out += te.tokens[i].tokenForm()
+		out += te.tokens[i].TokenForm()
 		if i == te.pos {
 			out += "_"
 		}

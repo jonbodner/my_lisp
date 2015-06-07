@@ -1,30 +1,32 @@
-package main
+package parser
 
-func Parse(tokens []Token) (Expr, int, error) {
+import "host.bodnerfamily.com/my_lisp/types"
+
+func Parse(tokens []types.Token) (types.Expr, int, error) {
 	return parseInner(tokens)
 }
 
-func parseInner(tokens []Token) (Expr, int, error) {
+func parseInner(tokens []types.Token) (types.Expr, int, error) {
 	//fmt.Println("incoming tokens:",tokens)
 	if len(tokens) == 0 {
 		return nil, 0, ParseError{"No tokens supplied", tokens, 0}
 	}
 	token := tokens[0]
 	switch t := token.(type) {
-	case NAME:
+	case types.NAME:
 		//name by itself is a complete expression, so return
-		out := Atom(t)
+		out := types.Atom(t)
 		return out, 1, nil
-	case RParen:
+	case types.RParen:
 		//this is an error
 		return nil, 0, ParseError{"Right paren in unexpected location", tokens, 0}
-	case Dot:
+	case types.Dot:
 		//this is an error
 		return nil, 0, ParseError{"Dot in unexpected location", tokens, 0}
-	case Quote:
+	case types.Quote:
 		//"reader macro" -- turns 'EXPR into (QUOTE EXPR)
-		quoted := &SExpr{NIL, NIL}
-		out := &SExpr{Atom("QUOTE"), quoted}
+		quoted := &types.SExpr{types.NIL, types.NIL}
+		out := &types.SExpr{types.Atom("QUOTE"), quoted}
 		nested, remaining, err := parseInner(tokens[1:])
 		if err != nil {
 			if pe, ok := err.(ParseError); ok {
@@ -36,8 +38,8 @@ func parseInner(tokens []Token) (Expr, int, error) {
 		}
 		quoted.Left = nested
 		return out, remaining + 1, nil
-	case LParen:
-		out := &SExpr{NIL, NIL}
+	case types.LParen:
+		out := &types.SExpr{types.NIL, types.NIL}
 		cur := out
 		pos := 1
 		dotted := false
@@ -48,7 +50,7 @@ func parseInner(tokens []Token) (Expr, int, error) {
 				return nil, len(tokens), ParseError{"Left paren without matching right paren", tokens, 0}
 			}
 			// if the next token is RPAREN, we're done
-			if tokens[pos] == RPAREN {
+			if tokens[pos] == types.RPAREN {
 				return out, pos + 1, nil
 			}
 			//otherwise, recurse for the left value of the SExpr
@@ -65,12 +67,12 @@ func parseInner(tokens []Token) (Expr, int, error) {
 			//fmt.Println("got left value ",left, "to add to ", cur)
 			cur.Left = left
 			//if the next token is RPAREN, we're done
-			if tokens[pos] == RPAREN {
+			if tokens[pos] == types.RPAREN {
 				//fmt.Println("No right value -- done", out)
 				return out, pos + 1, nil
 			}
 			//if the next token is a dot
-			if tokens[pos] == DOT {
+			if tokens[pos] == types.DOT {
 				if dotted {
 					return nil, pos, ParseError{"More than one dot in a dotted pair", tokens, pos}
 				}
@@ -92,7 +94,7 @@ func parseInner(tokens []Token) (Expr, int, error) {
 					return nil, pos, ParseError{"More than one value to the right of the dot in a dotted pair", tokens, pos}
 				}
 				//otherwise, keep going
-				right := &SExpr{NIL, NIL}
+				right := &types.SExpr{types.NIL, types.NIL}
 				cur.Right = right
 				cur = right
 			}

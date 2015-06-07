@@ -3,6 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"host.bodnerfamily.com/my_lisp/evaluator"
+	"host.bodnerfamily.com/my_lisp/parser"
+	"host.bodnerfamily.com/my_lisp/scanner"
+	"host.bodnerfamily.com/my_lisp/types"
 	"os"
 )
 
@@ -10,35 +14,35 @@ func main() {
 	bio := bufio.NewReader(os.Stdin)
 	done := false
 	depth := 0
-	tokens := []Token{}
+	tokens := []types.Token{}
 	for !done {
 		line, _, err := bio.ReadLine()
 		if err != nil {
 			fmt.Errorf("error: %v", err)
 			return
 		}
-		newTokens, newDepth := Scan(string(line))
+		newTokens, newDepth := scanner.Scan(string(line))
 		depth = depth + newDepth
 		if depth < 0 {
 			fmt.Println("Invalid -- Too many closing parens")
 			depth = 0
-			tokens = make([]Token, 0)
+			tokens = make([]types.Token, 0)
 			continue
 		}
 		tokens = append(tokens, newTokens...)
 		if depth == 0 {
 			fmt.Println(tokens)
-			expr, pos, err := Parse(tokens)
+			expr, pos, err := parser.Parse(tokens)
 			fmt.Println(expr)
 			fmt.Println(pos)
 			fmt.Println(err)
-			result, err := Eval(expr)
+			result, err := evaluator.Eval(expr)
 			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println(result)
 			}
-			tokens = make([]Token, 0)
+			tokens = make([]types.Token, 0)
 		}
 	}
 }

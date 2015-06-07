@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"fmt"
@@ -166,14 +166,14 @@ func (l Lambda) String() string {
 
 type Token interface {
 	fmt.Stringer
-	tokenForm() string
+	TokenForm() string
 }
 
 type LParen struct{}
 
 var LPAREN LParen
 
-func (l LParen) tokenForm() string { return "(" }
+func (l LParen) TokenForm() string { return "(" }
 func (l LParen) String() string {
 	return "LPAREN"
 }
@@ -182,7 +182,7 @@ type RParen struct{}
 
 var RPAREN RParen
 
-func (r RParen) tokenForm() string { return ")" }
+func (r RParen) TokenForm() string { return ")" }
 func (r RParen) String() string {
 	return "RPAREN"
 }
@@ -191,7 +191,7 @@ type Dot struct{}
 
 var DOT Dot
 
-func (d Dot) tokenForm() string { return "." }
+func (d Dot) TokenForm() string { return "." }
 func (d Dot) String() string {
 	return "DOT"
 }
@@ -200,7 +200,7 @@ type Quote struct{}
 
 var QUOTE Quote
 
-func (q Quote) tokenForm() string { return "'" }
+func (q Quote) TokenForm() string { return "'" }
 func (q Quote) String() string {
 	return "QUOTE"
 }
@@ -208,4 +208,4 @@ func (q Quote) String() string {
 type NAME string
 
 func (n NAME) String() string    { return string(n) }
-func (n NAME) tokenForm() string { return string(n) }
+func (n NAME) TokenForm() string { return string(n) }
