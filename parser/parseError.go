@@ -1,6 +1,6 @@
 package parser
 
-import "host.bodnerfamily.com/my_lisp/types"
+import "github.com/jonbodner/my_lisp/types"
 
 type ParseError struct {
 	msg    string

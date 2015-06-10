@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"host.bodnerfamily.com/my_lisp/evaluator"
-	"host.bodnerfamily.com/my_lisp/parser"
-	"host.bodnerfamily.com/my_lisp/scanner"
-	"host.bodnerfamily.com/my_lisp/types"
+	"github.com/jonbodner/my_lisp/evaluator"
+	"github.com/jonbodner/my_lisp/parser"
+	"github.com/jonbodner/my_lisp/scanner"
+	"github.com/jonbodner/my_lisp/types"
 	"os"
 )
 

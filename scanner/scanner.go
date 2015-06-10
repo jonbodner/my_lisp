@@ -1,6 +1,6 @@
 package scanner
 
-import "host.bodnerfamily.com/my_lisp/types"
+import "github.com/jonbodner/my_lisp/types"
 
 func Scan(s string) ([]types.Token, int) {
 	out := []types.Token{}

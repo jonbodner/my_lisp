@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"host.bodnerfamily.com/my_lisp/types"
+	"github.com/jonbodner/my_lisp/types"
 )
 
 func TestScannerEmpty(t *testing.T) {

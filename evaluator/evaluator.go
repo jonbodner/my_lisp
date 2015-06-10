@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	. "host.bodnerfamily.com/my_lisp/types"
+	. "github.com/jonbodner/my_lisp/types"
 )
 
 /*

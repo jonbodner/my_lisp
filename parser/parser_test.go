@@ -2,10 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"host.bodnerfamily.com/my_lisp/assert"
+	"github.com/jonbodner/my_lisp/assert"
 	"testing"
-	"host.bodnerfamily.com/my_lisp/types"
-	"host.bodnerfamily.com/my_lisp/scanner"
+	"github.com/jonbodner/my_lisp/types"
+	"github.com/jonbodner/my_lisp/scanner"
 )
 
 func TestParserEmpty(t *testing.T) {

@@ -2,8 +2,8 @@ package evaluator
 
 import (
     "testing"
-    "host.bodnerfamily.com/my_lisp/scanner"
-    "host.bodnerfamily.com/my_lisp/parser"
+    "github.com/jonbodner/my_lisp/scanner"
+    "github.com/jonbodner/my_lisp/parser"
 )
 
 //additional
