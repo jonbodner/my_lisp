@@ -31,16 +31,20 @@ func main() {
 		}
 		tokens = append(tokens, newTokens...)
 		if depth == 0 {
-			fmt.Println(tokens)
-			expr, pos, err := parser.Parse(tokens)
-			fmt.Println(expr)
-			fmt.Println(pos)
-			fmt.Println(err)
-			result, err := evaluator.Eval(expr)
+			//fmt.Println(tokens)
+			expr, _, err := parser.Parse(tokens)
+			//fmt.Println(expr)
+			//fmt.Println(pos)
+			//fmt.Println(err)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Println(result)
+				result, err := evaluator.Eval(expr)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println(result)
+				}
 			}
 			tokens = make([]types.Token, 0)
 		}
