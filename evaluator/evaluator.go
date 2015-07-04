@@ -61,6 +61,8 @@ func init() {
 		Atom("LABEL"): label,
 		Atom("SETQ"):  setq,
 		Atom("LAMBDA"):  lambda,
+		Atom("PROGN"):  progn,
+		Atom("LET"): let,
 	}
 }
 
@@ -427,7 +429,7 @@ func setq(t *SExpr, env Env) (Expr, error) {
 			return nil, err
 		}
 		env.Put(l, lval)
-		return l, nil
+		return lval, nil
 	}
 	return nil, errors.New("Shouldn't get here")
 }
@@ -466,6 +468,97 @@ func lambda(t *SExpr, env Env) (Expr, error) {
 	//returns a new Expr type, a Lambda, which has its own env
 	lambda := Lambda{ParentEnv:env, Body: body, Params: aList}
 	return lambda, nil
+}
+
+func let(t *SExpr, env Env) (Expr, error) {
+	//has two params,
+	//a list of two-element lists with the scoped variables
+	//the command to run with those variables
+	//this works like let* does, because why have both?
+	//also once a let scope is established, a setq inside of the let will
+	//be scoped inside of the let, both for replacing an existing local value
+	//or for creating a new one. a setq in a let that refers to a variable in an
+	//outer scope will modify that outer scope.
+	variables, err := nth(1, t)
+	if err != nil {
+		return nil, err
+	}
+	if variables == NIL {
+		return nil, errors.New("missing variables for LET")
+	}
+	l, ok := variables.(*SExpr)
+	if !ok {
+		return nil, errors.New("LET variable list must be a List")
+	}
+	innerEnv, err := buildInnerEnv(l, env)
+	if err != nil {
+		return nil, err
+	}
+	body, err := nth(2, t)
+	if err != nil {
+		return nil, err
+	}
+	return evalInner(body, innerEnv)
+}
+
+func buildInnerEnv(l *SExpr, env Env) (Env, error) {
+	fmt.Println("var list == ", l)
+	vals := map[Atom]Expr{}
+	innerEnv := LocalEnv{Vals: vals, Parent: env}
+	i := 0
+	for {
+		cv, err := nth(i, l)
+		if err != nil {
+			return nil, err
+		}
+		if cv == NIL {
+			break
+		}
+		curVar, ok := cv.(*SExpr)
+		if !ok {
+			return nil, errors.New("LET variable list entry must be a List")
+		}
+		vn, err := nth(0, curVar)
+		if err != nil {
+			return nil, err
+		}
+		varName, ok := vn.(Atom)
+		if !ok {
+			return nil, errors.New("LET variable names must be Atoms")
+		}
+		varVal, err := nth(1, curVar)
+		if err != nil {
+			return nil, err
+		}
+		varExpr, err := evalInner(varVal, innerEnv)
+		if err != nil {
+			return nil, err
+		}
+		innerEnv.Vals[varName]=varExpr
+		i++
+	}
+	return innerEnv, nil
+}
+//has multiple values, each evaluated one at a time
+//returns the last value
+func progn(t *SExpr, env Env) (Expr, error) {
+	var retval Expr = NIL
+	i := 1
+	for {
+		curParam, err := nth(i, t)
+		if err != nil {
+			return nil, err
+		}
+		if curParam == NIL {
+			break
+		}
+		retval, err = evalInner(curParam, env)
+		if err != nil {
+			return nil, err
+		}
+		i++
+	}
+	return retval, nil
 }
 
 func listToSlice(l *SExpr) ([]Atom, error) {

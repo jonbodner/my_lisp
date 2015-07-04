@@ -14,19 +14,22 @@ So far the following functionality is there:
 - ATOM
 - EQ
 - COND
+- PROGN
+- LET
 - + - * /
 - Infinite precision math (Integers and ratios)
 
 It's a LISP-1 (single namespace for both values and functions). The scoping is static.
 
 Other features that I intend to add (in likely order):
-- PROGN
-- LET
 - Tail Call optimization
 - Read/Write environment
 - Macros
 - CSP functionality (Goroutines, Channels, Select)
+- Strings
 - Maps, Sets
+- Structs
+- Invoke Go functions
 
 As a stretch goal, I'd like to add the ability to generate compiled code as well.
 
