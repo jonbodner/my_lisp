@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	. "github.com/jonbodner/my_lisp/types"
+	"github.com/jonbodner/my_lisp/global"
 )
 
 /*
@@ -63,6 +64,10 @@ func init() {
 		Atom("LAMBDA"):  lambda,
 		Atom("PROGN"):  progn,
 		Atom("LET"): let,
+		Atom("**DEBUG**"): debug,
+		Atom("LOAD"): load,
+		Atom("STORE"): store,
+		Atom("DELETE"): delete,
 	}
 }
 
@@ -75,14 +80,14 @@ var depth = 0
 func evalInner(e Expr, env Env) (Expr, error) {
 	depth++
 	defer func () {
-		fmt.Println("done depth ", depth)
+		global.Log("done depth ", depth)
 		depth--
 	}()
-	fmt.Println("at depth ", depth)
-	fmt.Println("Evaluating ", e)
+	global.Log("at depth ", depth)
+	global.Log("Evaluating ", e)
 	switch t := e.(type) {
 	case Atom:
-		fmt.Println("\tGot an Atom")
+		global.Log("\tGot an Atom")
 		//check if number, and if so return self
 		r := &big.Rat{}
 		_, ok := r.SetString(string(t))
@@ -96,31 +101,31 @@ func evalInner(e Expr, env Env) (Expr, error) {
 		}
 		return nil, fmt.Errorf("Unknown symbol %s ", t)
 	case *SExpr:
-		fmt.Println("\tGot an SExpr")
+		global.Log("\tGot an SExpr")
 		switch a := t.Left.(type) {
 		case Atom:
-			fmt.Println("\t\tLeft is an Atom")
+			global.Log("\t\tLeft is an Atom")
 			evaluator, ok := BuiltIn[a]
 			if ok {
 				return evaluator(t, env)
 			}
-			fmt.Println("not a builtin")
+			global.Log("not a builtin")
 			//look up variable value in context and process that
-			fmt.Println("looking up ", a)
+			global.Log("looking up ", a)
 			expr, ok := env.Get(a)
 			if !ok {
 				return nil, fmt.Errorf("Unknown symbol %s ", a)
 			}
 			//replace the atom with the value of the expression
 			result, err := evalInner(expr, env)
-			fmt.Println("done evaluating")
+			global.Log("done evaluating")
 			if err != nil {
 				return nil, err
 			}
 			newT := &SExpr{result, t.Right}
 			return evalInner(newT, env)
 		case *SExpr:
-			fmt.Println("\t\tLeft is an SExpr")
+			global.Log("\t\tLeft is an SExpr")
 			//evaluate the left, then replace left with the evaluated value, and recurse
 			lResult, err := evalInner(t.Left, env)
 			if err != nil {
@@ -129,16 +134,16 @@ func evalInner(e Expr, env Env) (Expr, error) {
 			t.Left = lResult
 			return evalInner(t, env)
 		case Nil:
-			fmt.Println("Got a nil left")
+			global.Log("Got a nil left")
 			return t, nil
 		case Lambda:
-			fmt.Println("\t\tLeft is a Lambda")
+			global.Log("\t\tLeft is a Lambda")
 			return processLambda(a, t, env)
 		default:
 			return nil, errors.New("shouldn't get here")
 		}
 	case Lambda:
-		fmt.Println("\tGot a lambda")
+		global.Log("\tGot a lambda")
 		return t, nil
 	}
 
@@ -470,6 +475,42 @@ func lambda(t *SExpr, env Env) (Expr, error) {
 	return lambda, nil
 }
 
+func load(t *SExpr, env Env) (Expr, error) {
+	//todo
+	return Atom("Not implemented Yet"), nil
+}
+
+func store(t *SExpr, env Env) (Expr, error) {
+	//todo
+	return Atom("Not implemented Yet"), nil
+}
+
+func delete(t *SExpr, env Env) (Expr, error) {
+	//todo
+	return Atom("Not implemented Yet"), nil
+}
+
+func debug(t *SExpr, env Env) (Expr, error) {
+	param, err := nth(1, t)
+	if err != nil {
+		return nil, err
+	}
+	v, err := evalInner(param, env)
+	if err != nil {
+		return nil, err
+	}
+	global.Log("param is ", param)
+	global.Log("v is ", v)
+	if v == T {
+		global.DEBUG = true
+	} else if v == EMPTY {
+		global.DEBUG = false
+	} else {
+		return nil, errors.New("Unknown debug value. Valid values are T and NIL")
+	}
+	return T, nil
+}
+
 func let(t *SExpr, env Env) (Expr, error) {
 	//has two params,
 	//a list of two-element lists with the scoped variables
@@ -502,7 +543,7 @@ func let(t *SExpr, env Env) (Expr, error) {
 }
 
 func buildInnerEnv(l *SExpr, env Env) (Env, error) {
-	fmt.Println("var list == ", l)
+	global.Log("var list == ", l)
 	vals := map[Atom]Expr{}
 	innerEnv := LocalEnv{Vals: vals, Parent: env}
 	i := 0

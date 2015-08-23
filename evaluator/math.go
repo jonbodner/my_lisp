@@ -1,9 +1,11 @@
 package evaluator
+
 import (
     "fmt"
     "errors"
     "math/big"
     . "github.com/jonbodner/my_lisp/types"
+    "github.com/jonbodner/my_lisp/global"
 )
 
 func init() {
@@ -27,7 +29,7 @@ func plus(t *SExpr, env Env) (Expr, error) {
         if err != nil {
             return nil, err
         }
-        fmt.Println("\tfinished eval -- checking if it's a number")
+        global.Log("\tfinished eval -- checking if it's a number")
         r2 := &big.Rat{}
         _, ok = r2.SetString(ev.String())
         if !ok {

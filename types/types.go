@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strings"
+	"github.com/jonbodner/my_lisp/global"
 )
 
 //expressions
@@ -99,9 +100,9 @@ type Env interface {
 type GlobalEnv map[Atom]Expr
 
 func (ge GlobalEnv) Get(a Atom) (Expr, bool) {
-	fmt.Println("checking global env for ", a)
+	global.Log("checking global env for ", a)
 	e, ok := ge[a]
-	fmt.Println(e, ok)
+	global.Log(e, ok)
 	return e, ok
 }
 
@@ -115,13 +116,13 @@ type LocalEnv struct {
 }
 
 func (le LocalEnv) Get(a Atom) (Expr, bool) {
-	fmt.Println("checking local env for ", a)
+	global.Log("checking local env for ", a)
 	e, ok := le.Vals[a]
 	if ok {
-		fmt.Println("found ", e, "at my level")
+		global.Log("found ", e, "at my level")
 		return e, ok
 	}
-	fmt.Println("not in me, going to parent")
+	global.Log("not in me, going to parent")
 	return le.Parent.Get(a)
 }
 

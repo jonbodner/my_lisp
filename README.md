@@ -19,6 +19,8 @@ So far the following functionality is there:
 - + - * /
 - Infinite precision math (Integers and ratios)
 
+Debugging statements can be turned on and off with (\*\*DEBUG\*\* T) and (\*\*DEBUG\*\* NIL)
+
 It's a LISP-1 (single namespace for both values and functions). The scoping is static.
 
 Other features that I intend to add (in likely order):

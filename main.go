@@ -8,6 +8,7 @@ import (
 	"github.com/jonbodner/my_lisp/scanner"
 	"github.com/jonbodner/my_lisp/types"
 	"os"
+	"github.com/jonbodner/my_lisp/global"
 )
 
 func main() {
@@ -24,20 +25,20 @@ func main() {
 		newTokens, newDepth := scanner.Scan(string(line))
 		depth = depth + newDepth
 		if depth < 0 {
-			fmt.Println("Invalid -- Too many closing parens")
+			global.Log("Invalid -- Too many closing parens")
 			depth = 0
 			tokens = make([]types.Token, 0)
 			continue
 		}
 		tokens = append(tokens, newTokens...)
 		if depth == 0 {
-			//fmt.Println(tokens)
+			//global.Log(tokens)
 			expr, _, err := parser.Parse(tokens)
-			//fmt.Println(expr)
-			//fmt.Println(pos)
-			//fmt.Println(err)
+			//global.Log(expr)
+			//global.Log(pos)
+			//global.Log(err)
 			if err != nil {
-				fmt.Println(err)
+				global.Log(err)
 			} else {
 				result, err := evaluator.Eval(expr)
 				if err != nil {
