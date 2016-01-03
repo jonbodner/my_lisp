@@ -1,11 +1,17 @@
 package evaluator
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
-	. "github.com/jonbodner/my_lisp/types"
+	"os"
+
 	"github.com/jonbodner/my_lisp/global"
+	"github.com/jonbodner/my_lisp/parser"
+	"github.com/jonbodner/my_lisp/scanner"
+	. "github.com/jonbodner/my_lisp/types"
 )
 
 /*
@@ -52,22 +58,22 @@ func init() {
 	TopLevel[Atom("NIL")] = EMPTY
 
 	BuiltIn = map[Atom]Evaluator{
-		Atom("QUOTE"): quote,
-		Atom("CAR"):   car,
-		Atom("CDR"):   cdr,
-		Atom("CONS"):  cons,
-		Atom("ATOM"):  atom,
-		Atom("EQ"):    equal,
-		Atom("COND"):  cond,
-		Atom("LABEL"): label,
-		Atom("SETQ"):  setq,
-		Atom("LAMBDA"):  lambda,
-		Atom("PROGN"):  progn,
-		Atom("LET"): let,
+		Atom("QUOTE"):     quote,
+		Atom("CAR"):       car,
+		Atom("CDR"):       cdr,
+		Atom("CONS"):      cons,
+		Atom("ATOM"):      atom,
+		Atom("EQ"):        equal,
+		Atom("COND"):      cond,
+		Atom("LABEL"):     label,
+		Atom("SETQ"):      setq,
+		Atom("LAMBDA"):    lambda,
+		Atom("PROGN"):     progn,
+		Atom("LET"):       let,
 		Atom("**DEBUG**"): debug,
-		Atom("LOAD"): load,
-		Atom("STORE"): store,
-		Atom("DELETE"): delete,
+		Atom("LOAD"):      load,
+		Atom("STORE"):     store,
+		Atom("DELETE"):    delete,
 	}
 }
 
@@ -79,7 +85,7 @@ var depth = 0
 
 func evalInner(e Expr, env Env) (Expr, error) {
 	depth++
-	defer func () {
+	defer func() {
 		global.Log("done depth ", depth)
 		depth--
 	}()
@@ -439,7 +445,6 @@ func setq(t *SExpr, env Env) (Expr, error) {
 	return nil, errors.New("Shouldn't get here")
 }
 
-
 func lambda(t *SExpr, env Env) (Expr, error) {
 	//must have 2 params
 	//param 1 is a list of parameters
@@ -471,23 +476,149 @@ func lambda(t *SExpr, env Env) (Expr, error) {
 	}
 	//a2.Right.Left can be anything
 	//returns a new Expr type, a Lambda, which has its own env
-	lambda := Lambda{ParentEnv:env, Body: body, Params: aList}
+	lambda := Lambda{ParentEnv: env, Body: body, Params: aList}
 	return lambda, nil
 }
 
+//load the environment from the named file. Existing symbols will be overwritten.
 func load(t *SExpr, env Env) (Expr, error) {
-	//todo
-	return Atom("Not implemented Yet"), nil
+	if t.Right == NIL {
+		return nil, errors.New("missing parameter for LOAD")
+	}
+	switch a2 := t.Right.(type) {
+	case *SExpr:
+		//should only have a single parameter for LOAD
+		if a2.Right != NIL {
+			return nil, errors.New("shouldn't have more than one parameter for LOAD")
+		}
+		e2, error := evalInner(a2.Left, env)
+		if error != nil {
+			return nil, error
+		}
+		switch a3 := e2.(type) {
+		case Atom:
+			f, err := os.Open(string(a3))
+			if err != nil {
+				return nil, err
+			}
+			defer f.Close()
+			newEnv, err := internalRepl(f)
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range newEnv {
+				TopLevel[k] = v
+			}
+			return T, nil
+		default:
+			return nil, errors.New("LOAD parameter must evaluate to a single value")
+		}
+	}
+	return nil, errors.New("Shouldn't get here")
 }
 
+func internalRepl(r io.Reader) (GlobalEnv, error) {
+	newEnv := GlobalEnv{}
+	newEnv[T] = T
+	newEnv[Atom("NIL")] = EMPTY
+
+	bio := bufio.NewReader(r)
+	done := false
+	depth := 0
+	tokens := []Token{}
+	for !done {
+		line, err := bio.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+			done = true
+			continue
+		}
+		newTokens, newDepth := scanner.Scan(string(line))
+		depth = depth + newDepth
+		if depth < 0 {
+			return nil, errors.New("Invalid -- Too many closing parens")
+		}
+		tokens = append(tokens, newTokens...)
+		if depth == 0 {
+			//global.Log(tokens)
+			expr, _, err := parser.Parse(tokens)
+			//global.Log(expr)
+			//global.Log(pos)
+			//global.Log(err)
+			if err != nil {
+				global.Log(err)
+			} else {
+				result, err := evalInner(expr, newEnv)
+				if err != nil {
+					return nil, err
+				}
+				fmt.Println(result)
+			}
+			tokens = []Token{}
+		}
+	}
+	return newEnv, nil
+}
+
+//take the current environment and write it out to the named file (second parameter)
 func store(t *SExpr, env Env) (Expr, error) {
-	//todo
-	return Atom("Not implemented Yet"), nil
+	if t.Right == NIL {
+		return nil, errors.New("missing parameter for STORE")
+	}
+	switch a2 := t.Right.(type) {
+	case *SExpr:
+		//should only have a single parameter for STORE
+		if a2.Right != NIL {
+			return nil, errors.New("shouldn't have more than one parameter for STORE")
+		}
+		e2, error := evalInner(a2.Left, env)
+		if error != nil {
+			return nil, error
+		}
+		switch a3 := e2.(type) {
+		case Atom:
+			f, err := os.Create(string(a3))
+			if err != nil {
+				return nil, err
+			}
+			defer f.Close()
+			_, err = f.WriteString(TopLevel.String())
+			if err != nil {
+				return nil, err
+			}
+			return T, nil
+		default:
+			return nil, errors.New("STORE parameter must evaluate to a single value")
+		}
+	}
+	return nil, errors.New("Shouldn't get here")
 }
 
 func delete(t *SExpr, env Env) (Expr, error) {
-	//todo
-	return Atom("Not implemented Yet"), nil
+	if t.Right == NIL {
+		return nil, errors.New("missing parameter for DELETE")
+	}
+	switch a2 := t.Right.(type) {
+	case *SExpr:
+		//should only have a single parameter for DELETE
+		if a2.Right != NIL {
+			return nil, errors.New("shouldn't have more than one parameter for DELETE")
+		}
+		e2, error := evalInner(a2.Left, env)
+		if error != nil {
+			return nil, error
+		}
+		switch a3 := e2.(type) {
+		case Atom:
+			env.Delete(a3)
+			return T, nil
+		default:
+			return nil, errors.New("DELETE parameter must evaluate to a single value")
+		}
+	}
+	return nil, errors.New("Shouldn't get here")
 }
 
 func debug(t *SExpr, env Env) (Expr, error) {
@@ -575,11 +706,12 @@ func buildInnerEnv(l *SExpr, env Env) (Env, error) {
 		if err != nil {
 			return nil, err
 		}
-		innerEnv.Vals[varName]=varExpr
+		innerEnv.Vals[varName] = varExpr
 		i++
 	}
 	return innerEnv, nil
 }
+
 //has multiple values, each evaluated one at a time
 //returns the last value
 func progn(t *SExpr, env Env) (Expr, error) {
@@ -628,39 +760,39 @@ func listToSlice(l *SExpr) ([]Atom, error) {
 }
 
 func processLambda(l Lambda, t *SExpr, env Env) (Expr, error) {
-	le := LocalEnv{Vals:make(map[Atom]Expr), Parent: l.ParentEnv}
+	le := LocalEnv{Vals: make(map[Atom]Expr), Parent: l.ParentEnv}
 	//assign parameter values to parameter names
-	count :=0
+	count := 0
 	switch paramVals := t.Right.(type) {
-		case Atom:
-			return nil, errors.New("Can't have a dotted pair here")
-		case Nil:
-			//do nothing
-		case *SExpr:
-			var param Expr = NIL
-			for count < len(l.Params) {
-				var err error
-				param, err = nth(count, paramVals)
-				if err != nil {
-					return nil, err
-				}
-				if param == NIL {
-					break
-				}
-				val, err := evalInner(param, env)
-				if err != nil {
-					return nil, err
-				}
-				le.Vals[l.Params[count]] = val
-				count++
-			}
-			leftOver, err := nth(len(l.Params), paramVals)
+	case Atom:
+		return nil, errors.New("Can't have a dotted pair here")
+	case Nil:
+		//do nothing
+	case *SExpr:
+		var param Expr = NIL
+		for count < len(l.Params) {
+			var err error
+			param, err = nth(count, paramVals)
 			if err != nil {
 				return nil, err
 			}
-			if leftOver != NIL {
-				return nil, fmt.Errorf("Too many parameters for LAMBDA. Expected %d", len(l.Params))
+			if param == NIL {
+				break
 			}
+			val, err := evalInner(param, env)
+			if err != nil {
+				return nil, err
+			}
+			le.Vals[l.Params[count]] = val
+			count++
+		}
+		leftOver, err := nth(len(l.Params), paramVals)
+		if err != nil {
+			return nil, err
+		}
+		if leftOver != NIL {
+			return nil, fmt.Errorf("Too many parameters for LAMBDA. Expected %d", len(l.Params))
+		}
 	}
 	if count != len(l.Params) {
 		return nil, fmt.Errorf("Too few parameters for LAMBDA. Expected %d, got %d", len(l.Params), count)
@@ -668,7 +800,6 @@ func processLambda(l Lambda, t *SExpr, env Env) (Expr, error) {
 	//call body with new environment
 	return evalInner(l.Body, le)
 }
-
 
 //get the nth parameter of the SExpr.
 //The function/macro/special form name is the CAR of the SExpr passed in
@@ -695,16 +826,16 @@ func isEqual(e, e2 Expr) bool {
 		if e2, ok := e2.(Atom); ok {
 			if e == e2 {
 				return true
-			} else {
-				//might be numbers, have to do numeric comparison
-				r := &big.Rat{}
-				r, ok := r.SetString(string(e))
-				r2 := &big.Rat{}
-				r2, ok2 := r2.SetString(string(e2))
-				if ok && ok2 {
-					return r.Cmp(r2) == 0
-				}
 			}
+			//might be numbers, have to do numeric comparison
+			r := &big.Rat{}
+			r, ok := r.SetString(string(e))
+			r2 := &big.Rat{}
+			r2, ok2 := r2.SetString(string(e2))
+			if ok && ok2 {
+				return r.Cmp(r2) == 0
+			}
+
 		}
 		return false
 	case Nil:
@@ -721,8 +852,6 @@ func isEqual(e, e2 Expr) bool {
 
 /*
 todo
-let/scopes
-progn
 load/save environment
 numeric operations
 code cleanup

@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strings"
+
 	"github.com/jonbodner/my_lisp/global"
 )
 
@@ -95,6 +96,7 @@ func (n Nil) String() string {
 type Env interface {
 	Get(a Atom) (Expr, bool)
 	Put(a Atom, e Expr)
+	Delete(a Atom)
 }
 
 type GlobalEnv map[Atom]Expr
@@ -110,8 +112,24 @@ func (ge GlobalEnv) Put(a Atom, e Expr) {
 	ge[a] = e
 }
 
+func (ge GlobalEnv) Delete(a Atom) {
+	delete(ge, a)
+}
+
+func (ge GlobalEnv) String() string {
+	out := ""
+	for k, v := range ge {
+		if _, ok := v.(Atom); ok {
+			out += fmt.Sprintf("(SETQ %s '%s)\n", k, v)
+		} else {
+			out += fmt.Sprintf("(SETQ %s %s)\n", k, v)
+		}
+	}
+	return out
+}
+
 type LocalEnv struct {
-	Vals map[Atom]Expr
+	Vals   map[Atom]Expr
 	Parent Env
 }
 
@@ -137,18 +155,29 @@ func (le LocalEnv) Put(a Atom, e Expr) {
 	}
 	// case 2: defined somewhere in a parent scope
 	if _, ok := le.Parent.Get(a); ok {
-		le.Parent.Put(a,e)
+		le.Parent.Put(a, e)
 		return
 	}
 	// case 3: never defined
 	le.Vals[a] = e
 }
 
+func (le LocalEnv) Delete(a Atom) {
+	global.Log("checking local env for ", a)
+	_, ok := le.Vals[a]
+	if ok {
+		delete(le.Vals, a)
+		global.Log("deleted ", a, "at my level")
+		return
+	}
+	global.Log("not in me, going to parent")
+	le.Parent.Delete(a)
+}
 
 type Lambda struct {
 	ParentEnv Env
-	Params []Atom
-	Body Expr
+	Params    []Atom
+	Body      Expr
 }
 
 func (l Lambda) isExpr() {}
@@ -157,11 +186,10 @@ func (l Lambda) String() string {
 	for k, v := range l.Params {
 		sparams[k] = string(v)
 	}
-	pstr := strings.Join(sparams," ")
+	pstr := strings.Join(sparams, " ")
 
-	return "(LAMBDA (" + pstr +") "+l.Body.String()+" )"
+	return "(LAMBDA (" + pstr + ") " + l.Body.String() + " )"
 }
-
 
 //tokens
 

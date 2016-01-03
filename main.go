@@ -3,12 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"log"
+	"os"
+
 	"github.com/jonbodner/my_lisp/evaluator"
+	"github.com/jonbodner/my_lisp/global"
 	"github.com/jonbodner/my_lisp/parser"
 	"github.com/jonbodner/my_lisp/scanner"
 	"github.com/jonbodner/my_lisp/types"
-	"os"
-	"github.com/jonbodner/my_lisp/global"
 )
 
 func main() {
@@ -17,17 +20,20 @@ func main() {
 	depth := 0
 	tokens := []types.Token{}
 	for !done {
-		line, _, err := bio.ReadLine()
+		line, err := bio.ReadString('\n')
 		if err != nil {
-			fmt.Errorf("error: %v", err)
-			return
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+			done = true
+			continue
 		}
 		newTokens, newDepth := scanner.Scan(string(line))
 		depth = depth + newDepth
 		if depth < 0 {
-			global.Log("Invalid -- Too many closing parens")
+			fmt.Println("Invalid -- Too many closing parens")
 			depth = 0
-			tokens = make([]types.Token, 0)
+			tokens = []types.Token{}
 			continue
 		}
 		tokens = append(tokens, newTokens...)
@@ -47,7 +53,7 @@ func main() {
 					fmt.Println(result)
 				}
 			}
-			tokens = make([]types.Token, 0)
+			tokens = []types.Token{}
 		}
 	}
 }
