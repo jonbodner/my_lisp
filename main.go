@@ -18,7 +18,7 @@ func main() {
 	bio := bufio.NewReader(os.Stdin)
 	done := false
 	depth := 0
-	tokens := []types.Token{}
+	var tokens []types.Token
 	for !done {
 		line, err := bio.ReadString('\n')
 		if err != nil {
@@ -28,7 +28,7 @@ func main() {
 			done = true
 			continue
 		}
-		newTokens, newDepth := scanner.Scan(string(line))
+		newTokens, newDepth := scanner.Scan(line)
 		depth = depth + newDepth
 		if depth < 0 {
 			fmt.Println("Invalid -- Too many closing parens")

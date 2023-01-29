@@ -3,14 +3,14 @@ package scanner
 import "github.com/jonbodner/my_lisp/types"
 
 func Scan(s string) ([]types.Token, int) {
-	out := []types.Token{}
-	curTokenTxt := []rune{}
+	var out []types.Token
+	var curTokenTxt []rune
 	buildCurToken := func() {
 		if len(curTokenTxt) > 0 {
 			if len(curTokenTxt) == 1 && curTokenTxt[0] == '.' {
 				out = append(out, types.DOT)
 			} else {
-				out = append(out, types.NAME(string(curTokenTxt)))
+				out = append(out, types.NAME(curTokenTxt))
 			}
 			curTokenTxt = make([]rune, 0)
 		}

@@ -9,8 +9,8 @@ import (
 
 //expressions
 
-//SExpr is an S-Expression.
-//That has a left side that's an expression
+// SExpr is an S-Expression.
+// That has a left side that's an expression
 type SExpr struct {
 	Left  Expr
 	Right Expr
@@ -44,7 +44,7 @@ outer:
 	return out
 }
 
-var EMPTY *SExpr = &SExpr{NIL, NIL}
+var EMPTY = &SExpr{Left: NIL, Right: NIL}
 
 /*
 func (s SExpr) String() string {
@@ -144,9 +144,10 @@ func (le LocalEnv) Get(a Atom) (Expr, bool) {
 	return le.Parent.Get(a)
 }
 
-//for now, no shadowing of declarations from outer scopes
-//since there's no way to modify the value of a value in an outer scope
-//(LABEL and SETQ are both create and assign)
+// Put assigns an Expr to an atom in the local environment.
+// for now, no shadowing of declarations from outer scopes
+// since there's no way to modify the value of a value in an outer scope
+// (LABEL and SETQ are both create and assign)
 func (le LocalEnv) Put(a Atom, e Expr) {
 	//case 1: already defined locally
 	if _, ok := le.Vals[a]; ok {

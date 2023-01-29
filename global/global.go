@@ -4,10 +4,10 @@ import (
 	"log"
 )
 
-var DEBUG bool = true
+var Debug = true
 
 func Log(vals ...interface{}) {
-	if DEBUG {
+	if Debug {
 		log.Println(vals...)
 	}
 }

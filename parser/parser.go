@@ -25,8 +25,8 @@ func parseInner(tokens []types.Token) (types.Expr, int, error) {
 		return nil, 0, ParseError{"Dot in unexpected location", tokens, 0}
 	case types.Quote:
 		//"reader macro" -- turns 'EXPR into (QUOTE EXPR)
-		quoted := &types.SExpr{types.NIL, types.NIL}
-		out := &types.SExpr{types.Atom("QUOTE"), quoted}
+		quoted := &types.SExpr{Left: types.NIL, Right: types.NIL}
+		out := &types.SExpr{Left: types.Atom("QUOTE"), Right: quoted}
 		nested, remaining, err := parseInner(tokens[1:])
 		if err != nil {
 			if pe, ok := err.(ParseError); ok {
@@ -39,7 +39,7 @@ func parseInner(tokens []types.Token) (types.Expr, int, error) {
 		quoted.Left = nested
 		return out, remaining + 1, nil
 	case types.LParen:
-		out := &types.SExpr{types.NIL, types.NIL}
+		out := &types.SExpr{Left: types.NIL, Right: types.NIL}
 		cur := out
 		pos := 1
 		dotted := false
@@ -94,7 +94,7 @@ func parseInner(tokens []types.Token) (types.Expr, int, error) {
 					return nil, pos, ParseError{"More than one value to the right of the dot in a dotted pair", tokens, pos}
 				}
 				//otherwise, keep going
-				right := &types.SExpr{types.NIL, types.NIL}
+				right := &types.SExpr{Left: types.NIL, Right: types.NIL}
 				cur.Right = right
 				cur = right
 			}

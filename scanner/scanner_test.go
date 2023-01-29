@@ -2,9 +2,9 @@ package scanner
 
 import (
 	"fmt"
+	"github.com/jonbodner/my_lisp/types"
 	"reflect"
 	"testing"
-	"github.com/jonbodner/my_lisp/types"
 )
 
 func TestScannerEmpty(t *testing.T) {
