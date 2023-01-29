@@ -15,35 +15,66 @@ import (
 )
 
 /*
-DONE 1. value (QUOTE e) = e. Thus the value of (QUOTE A) is A.
+From the paper: "A MICRO-MANUAL FOR LISP - NOT THE WHOLE TRUTH"
+
+found at https://www.cse.sc.edu/~mgv/csce531sp23/micromanualLISP.pdf
+
+DONE 1. value (QUOTE e) = e.
+Thus the value of:
+(QUOTE A)
+is A.
+
 DONE 2. value (CAR e), where value e is a non-empty list, is the first
-element of value e. Thus value (CAR (QUOTE (A B C))) - A.
-DONE 3. value (CDR e), where value e is a non-empty list, is the the list
-that remains when the first element of value e is deleted. Thus
-value (CDR (QUOTE (A B C))) = (B C).
-DONE 4. value (CONS el e2), is the list that results from prefixing
-value el onto the list value e2. Thus
-value (CONS (QUOTE A) (QUOTE (B C))) = (A B C).
-DONE 5. value (EQUAL el e2) is types.T if value el = value e2. Otherwise, its
-value is types.NIL. Thus
-value (EQUAL (CAR (QUOTE (A B))) (QUOTE A)) = types.T,
-DONE 6. value (ATOM e) - types.T if value e is an atom; otherwise its value Is
-types.NIL.
-DONE 7. value (COND(pt e I) ... (PB en)) = value e i, where Pi is the the
-first of the p's whose value is not types.NIL. Thus
-value (COND ((ATOM (QUOTE A)) (QUOTE B)) ((QUOTE types.T)
-(QUOTE C))) = B.
+element of value e.
+Thus the value of:
+(CAR (QUOTE (A B C)))
+is A.
+
+DONE 3. value (CDR e), where value e is a non-empty list, is the list
+that remains when the first element of value e is deleted.
+Thus the value of:
+(CDR (QUOTE (A B C)))
+is (B C).
+
+DONE 4. value (CONS e1 e2), is the list that results from prefixing
+value e1 onto the list value e2.
+Thus the value of:
+(CONS (QUOTE A) (QUOTE (B C)))
+is (A B C).
+
+DONE 5. value (EQUAL e1 e2) is T if value e1 = value e2. Otherwise, its
+value is NIL.
+Thus the value of:
+(EQUAL (CAR (QUOTE (A B))) (QUOTE A))
+is T.
+
+DONE 6. value (ATOM e) is T if value e is an atom; otherwise its value is NIL.
+
+DONE 7. value (COND(p1 e1) ... (pn en)) = value ei, where pi is the first of
+the p's whose value is not NIL.
+Thus the value of:
+(COND
+	((ATOM (QUOTE A)) (QUOTE B))
+	((QUOTE T) (QUOTE C))
+)
+is B.
+
 DONE 8. An atom v, regarded as a variable, may have a value.
-DONE 9. value ((LAMBDA (v I ... v,) e) e I ... e a) is the same as value e
-but in an environment in which the variables v I ... v n take the
-values of the expressions e I ... e n in the original environment.
-Thus
-value ((LAMBDA (X Y) (CONS (CAR X) Y)) (QUOTE (A B))
-(CDR (QUOTE (C D)))) = (A D).
-DONE 10. Here's the hard one. value ((LABEL f (LAMBDA (o I ... v,)
-e)) e I ... en) is the same as value ((LAMBDA (v I ... vn) e) e I ...
-e n) with the additional rule that whenever ~¢al an) must be
-evaluated, f is replaced by (LABEL/" (LAMBDA (v I ... vn) e)).
+
+DONE 9. value ((LAMBDA (v1 ... vn) e) e1 ... en) is the same as value e
+but in an environment in which the variables v1 ... vn take the
+values of the expressions e1 ... en in the original environment.
+Thus the value of:
+(
+	(LAMBDA (X Y) (CONS (CAR X) Y))
+	(QUOTE (A B)) (CDR (QUOTE (C D)))
+)
+is (A D).
+
+DONE 10. Here's the hard one. value ((LABEL f (LAMBDA (v1 ... vn)
+e)) e1 ... en) is the same as value ((LAMBDA (v1 ... vn) e) e1 ... en)
+with the additional rule that whenever (f a1 ... an) must be
+evaluated, f is replaced by (LABEL f (LAMBDA (v1 ... vn) e)).
 Lists beginning with LABEL define functions recursively.
 */
 
