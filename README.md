@@ -16,13 +16,13 @@ So far the following functionality is there:
 - COND
 - PROGN
 - LET
-- + - * /
+- `+`, `-`, `*`, `/`
 - Infinite precision math (Integers and ratios)
-- DELETE (to remove a existing symbol from the environment)
+- DELETE (to remove an existing symbol from the environment)
 - STORE (to write all symbols from the current environment to a text file)
 - LOAD (to load symbols into the current environment from a text file)
 
-Debugging statements can be turned on and off with (\*\*DEBUG\*\* T) and (\*\*DEBUG\*\* NIL)
+Debugging statements can be turned on and off with `(**DEBUG** T)` and `(**DEBUG** NIL)`
 
 It's a LISP-1 (single namespace for both values and functions). The scoping is static.
 
